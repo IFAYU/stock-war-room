@@ -17,6 +17,17 @@
 </head>
 <body>
 <style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+<div id="diagBar" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#c0392b;color:#fff;font:600 13px monospace;padding:6px 10px;text-align:center;">
+  建置版本：2026-09-16-23:10　｜　全域點擊次數：<span id="diagClickCount">0</span>（點畫面任何地方測試）
+</div>
+<div style="height:32px;"></div>
+<script>
+  (function(){
+    var n = 0;
+    var el = document.getElementById('diagClickCount');
+    document.addEventListener('click', function(){ n++; el.textContent = n; }, true);
+  })();
+</script>
 <style>
   :root{
     --bg:#f6f3ec; --surface:#ffffff; --surface-2:#efeadf; --ink:#20241f; --muted:#6b6a5f; --line:#e2ddcf;
