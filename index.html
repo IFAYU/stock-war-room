@@ -245,11 +245,21 @@
   .taxctrl .bracket{ font-size:12.5px; color:var(--accent); font-weight:600; }
 
   .taxresult{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; }
+  .taxresult.reco-row{ grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); margin-bottom:14px; }
+  .taxresult.stat-row{ grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); opacity:.9; }
+  .taxresult.stat-row .taxcard{ padding:11px 14px; }
+  .taxresult.stat-row .t-value{ font-size:14px; }
   .taxcard{ border:1px solid var(--line); border-radius:12px; padding:14px 16px; background:var(--surface); display:flex; flex-direction:column; gap:5px; min-width:0; }
-  .taxcard.reco{ border-color:var(--accent); background:var(--accent-soft); }
+  .taxresult.reco-row .taxcard{ padding:18px 20px; }
+  .taxresult.reco-row .t-value{ font-size:20px; }
+  .taxcard.reco{ border-color:var(--accent); background:var(--accent-soft); box-shadow:0 0 0 1px var(--accent) inset; }
   .taxcard .t-label{ font-size:12px; color:var(--muted); font-weight:600; }
   .taxcard .t-value{ font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; font-size:16px; font-weight:700; overflow-wrap:anywhere; }
   .taxcard .t-sub{ font-size:11.5px; color:var(--muted); }
+  .taxDetails{ margin-top:4px; }
+  .taxDetails summary{ cursor:pointer; font-size:12.5px; color:var(--muted); padding:8px 2px; user-select:none; }
+  .taxDetails summary:hover{ color:var(--accent); }
+  .taxDetails[open] summary{ margin-bottom:8px; }
 
   .foot{ display:flex; flex-direction:column; gap:8px; font-size:12.5px; color:var(--muted); line-height:1.7; border-top:1px solid var(--line); padding-top:16px; }
   .foot b{ color:var(--ink); }
@@ -370,8 +380,11 @@
     <div class="sec-num"><span class="n">五</span><h2>股利稅務試算</h2></div>
     <div class="sec-head"><span class="hint">依每一筆已公告/推估配息各自的股利組成拆分應稅/免稅，估算合併計稅 vs 28%分開計稅、二代健保補充保費</span></div>
     <div class="taxctrl" id="taxCtrl"></div>
-    <div class="tblwrap"><table class="tax" id="taxTable"></table></div>
-    <div class="taxresult" id="taxResult"></div>
+    <div id="taxResult"></div>
+    <details class="taxDetails">
+      <summary>逐筆配息明細（怎麼算出來的，點開查核對）</summary>
+      <div class="tblwrap"><table class="tax" id="taxTable"></table></div>
+    </details>
   </section>
 
   <section>
@@ -1224,7 +1237,13 @@
     var head = '<thead><tr><th>標的</th><th>代號</th><th class="num">直接持有(台幣)</th><th class="num">間接持有(台幣)</th><th class="num">合計曝險</th><th class="num">佔投資組合%</th><th>間接來源</th></tr></thead>';
     var body = top.map(function(e){
       var pct = e.total/data.totalPortfolio*100;
-      return '<tr><td>'+esc(e.name)+'</td><td class="code">'+esc(e.code)+'</td><td class="num">'+(e.direct>0?fmtTWD(e.direct):'—')+'</td><td class="num">'+(e.indirect>0?fmtTWD(e.indirect):'—')+'</td><td class="num" style="font-weight:600">'+fmtTWD(e.total)+'</td><td class="num">'+pct.toFixed(2)+'%</td><td style="white-space:normal">'+(e.from.join('、')||'—')+'</td></tr>';
+      var srcKey = 'overlap-'+e.code;
+      var srcOpen = !!expanded[srcKey];
+      var srcText = e.from.join('、')||'—';
+      var srcCell = e.from.length
+        ? '<span class="note'+(srcOpen?'':' clamp')+'" data-notetoggle="'+esc(srcKey)+'" style="max-width:26ch;">'+esc(srcText)+'</span>'
+        : '—';
+      return '<tr><td>'+esc(e.name)+'</td><td class="code">'+esc(e.code)+'</td><td class="num">'+(e.direct>0?fmtTWD(e.direct):'—')+'</td><td class="num">'+(e.indirect>0?fmtTWD(e.indirect):'—')+'</td><td class="num" style="font-weight:600">'+fmtTWD(e.total)+'</td><td class="num">'+pct.toFixed(2)+'%</td><td style="white-space:normal">'+srcCell+'</td></tr>';
     }).join('');
     var foot = '<tfoot><tr><td colspan="4">投資組合總市值</td><td class="num">'+fmtTWD(data.totalPortfolio)+'</td><td colspan="2"></td></tr></tfoot>';
     document.getElementById('overlapTable').innerHTML = head + '<tbody>' + body + '</tbody>' + foot;
@@ -1342,21 +1361,27 @@
     document.getElementById('taxTable').innerHTML = head + '<tbody>' + (body||'<tr><td colspan="8" style="color:var(--muted)">目前沒有任何配息紀錄</td></tr>') + '</tbody>' + foot;
 
     var reco = tx.mergedExtra <= tx.separateExtra ? 'merge' : 'sep';
-    var cards = [
-      {label:'54C應稅股利所得合計', value: fmtTWD(tx.totalC54)},
-      {label:'海外所得合計（本組合）', value: fmtTWD(tx.totalOverseas), sub: '併其他海外所得後 '+fmtTWD(tx.combinedOverseas)+'／門檻NT$1,000,000'},
-      {label:'免稅(76W資本利得/收益平準金)合計', value: fmtTWD(tx.totalExempt)},
-      {label:'二代健保補充保費預估', value: fmtTWD(tx.nhi), sub:'單筆應稅配息≥2萬才會被扣，僅計國內54C部分'},
+    var recoCards = [
       {label:'合併計稅：預估增加稅額', value: fmtTWD(tx.mergedExtra), sub:'已扣減8.5%抵減稅額(上限8萬)', reco: reco==='merge'},
       {label:'28%分開計稅：預估增加稅額', value: fmtTWD(tx.separateExtra), reco: reco==='sep'}
     ];
-    document.getElementById('taxResult').innerHTML = cards.map(function(c){
+    var statCards = [
+      {label:'54C應稅股利所得合計', value: fmtTWD(tx.totalC54)},
+      {label:'海外所得合計（本組合）', value: fmtTWD(tx.totalOverseas), sub: '併其他海外所得後 '+fmtTWD(tx.combinedOverseas)+'／門檻NT$1,000,000'},
+      {label:'免稅(76W資本利得/收益平準金)合計', value: fmtTWD(tx.totalExempt)},
+      {label:'二代健保補充保費預估', value: fmtTWD(tx.nhi), sub:'單筆應稅配息≥2萬才會被扣，僅計國內54C部分'}
+    ];
+    function cardHtml(c){
       return '<div class="taxcard'+(c.reco?' reco':'')+'"><div class="t-label">'+c.label+(c.reco?'　✅建議':'')+'</div><div class="t-value">'+c.value+'</div>'+(c.sub?'<div class="t-sub">'+c.sub+'</div>':'')+'</div>';
-    }).join('') +
-    '<div class="callout" style="grid-column:1/-1">' +
-      '<div><b>依台灣現行所得稅制分類：</b>54C國內股利所得要併入綜合所得稅（可選合併計稅或28%分開計稅）；76財產交易所得(ETF已實現價差)與收益平準金都<b>不計入</b>一般綜所稅；73/71海外所得<b>不併入</b>一般綜所稅，但要注意基本所得額(最低稅負制)門檻——全年海外所得合計未達100萬可不計入，達100萬以上須整筆計入基本所得額另外精算。</div>' +
-      '<div><b>怎麼算的：</b>逐筆讀取上面「持股明細」展開列裡每一筆配息紀錄的金額與稅務組成%，54C部分加總後併入你目前的綜合所得淨額，用累進稅率算出增加的稅額，再扣掉8.5%可抵減稅額（每戶上限8萬）；28%分開計稅則是這筆金額直接乘以28%。已公告(confirmed)的用實際金額，尚未公告的用推估金額，兩者都會被計入試算，你可以在上面持股展開列直接修改每一筆的月份/金額/是否已公告/稅務組成%。</div>' +
-    '</div>';
+    }
+    var calloutOpen = !!expanded['tax-explain'];
+    document.getElementById('taxResult').innerHTML =
+      '<div class="taxresult reco-row">' + recoCards.map(cardHtml).join('') + '</div>' +
+      '<div class="taxresult stat-row">' + statCards.map(cardHtml).join('') + '</div>' +
+      '<div class="footBlock'+(calloutOpen?'':' clamp')+'" data-foottoggle="tax-explain" style="margin-top:10px;">' +
+        '<div><b>依台灣現行所得稅制分類：</b>54C國內股利所得要併入綜合所得稅（可選合併計稅或28%分開計稅）；76財產交易所得(ETF已實現價差)與收益平準金都<b>不計入</b>一般綜所稅；73/71海外所得<b>不併入</b>一般綜所稅，但要注意基本所得額(最低稅負制)門檻——全年海外所得合計未達100萬可不計入，達100萬以上須整筆計入基本所得額另外精算。</div>' +
+        '<div><b>怎麼算的：</b>逐筆讀取上面「持股明細」展開列裡每一筆配息紀錄的金額與稅務組成%，54C部分加總後併入你目前的綜合所得淨額，用累進稅率算出增加的稅額，再扣掉8.5%可抵減稅額（每戶上限8萬）；28%分開計稅則是這筆金額直接乘以28%。已公告(confirmed)的用實際金額，尚未公告的用推估金額，兩者都會被計入試算，你可以在上面持股展開列直接修改每一筆的月份/金額/是否已公告/稅務組成%。</div>' +
+      '</div>';
   }
 
   // ================= 六、配息月曆 =================
@@ -1673,6 +1698,14 @@
     var k = el.dataset.foottoggle;
     expanded[k] = !expanded[k];
     renderFoot();
+  });
+
+  document.getElementById('overlapTable').addEventListener('click', function(e){
+    var el = e.target.closest('[data-notetoggle]');
+    if(!el) return;
+    var k = el.dataset.notetoggle;
+    expanded[k] = !expanded[k];
+    renderOverlap();
   });
 
   initHoldTableDelegation();
