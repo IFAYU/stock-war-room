@@ -366,7 +366,6 @@
     <div class="sec-num"><span class="n">三</span><h2>全曝險穿透分析</h2></div>
     <div class="sec-head"><span class="hint">把你直接持有的個股，加上透過每一檔ETF／基金依市值加權往下拆到底層的間接曝險，合併統計「你實際對每一家公司的總曝險」——矩形越大代表曝險越高，深色＝直接持有、淺色＝透過ETF/基金間接持有，點矩形看明細</span></div>
     <div class="treemapWrap"><div class="treemap" id="treemap"></div></div>
-    <div class="tblwrap"><table class="overlap" id="overlapTable"></table></div>
   </section>
 
   <section>
@@ -1214,42 +1213,24 @@
     renderTmDetail(data);
   }
 
+  // 2026-09-16：原本樹狀圖下方還有一張逐檔明細表格（含「間接來源」可點擊展開/收合欄），
+  // 使用者反應點了沒反應，一路查到是點擊判定範圍設錯（見護欄章節）。與其修表格的點擊死區，
+  // 使用者直接建議「只要顯示圖片就好，點圖片的區域顯示對應數字」——樹狀圖本來就有這個點擊
+  // 顯示明細的功能（下面這個函式），資訊完全重複，乾脆拿掉整張表格，只留樹狀圖+點擊明細，
+  // 少一種互動方式、少一次「兩邊點擊行為要一致」的維護負擔。
   function renderTmDetail(data){
     var box = document.getElementById('tmDetail');
     if(!box) return;
-    if(!tmActiveKey){ box.classList.remove('show'); box.innerHTML=''; return; }
-    var e = data.list.find(function(x){ return x.code===tmActiveKey; });
-    if(!e){ box.classList.remove('show'); return; }
-    var pct = e.total/data.totalPortfolio*100;
     box.classList.add('show');
+    var e = tmActiveKey ? data.list.find(function(x){ return x.code===tmActiveKey; }) : null;
+    if(!e){
+      box.innerHTML = '<span style="color:var(--muted)">點上面矩形查看該公司的直接持有／間接持有明細與間接來源</span>';
+      return;
+    }
+    var pct = e.total/data.totalPortfolio*100;
     box.innerHTML = '<b>'+esc(e.name)+'（'+esc(e.code)+'）合計曝險 '+fmtTWD(e.total)+'，佔投資組合總市值 '+pct.toFixed(2)+'%</b><br>' +
       '直接持有：'+fmtTWD(e.direct)+(e.direct>0?'（你帳戶裡直接持有這檔）':'（未直接持有）')+'<br>' +
       '間接持有：'+fmtTWD(e.indirect)+(e.from.length?'，來自：'+e.from.join('、'):'');
-  }
-
-  function renderOverlap(){
-    var data = computeExposure();
-    var top = data.list.filter(function(e){return e.total>0;}).slice(0, 20);
-    if(!top.length){
-      document.getElementById('overlapTable').innerHTML = '<tbody><tr><td style="padding:16px;color:var(--muted);">目前沒有任何曝險資料可統計。</td></tr></tbody>';
-      return;
-    }
-    var head = '<thead><tr><th>標的</th><th>代號</th><th class="num">直接持有(台幣)</th><th class="num">間接持有(台幣)</th><th class="num">合計曝險</th><th class="num">佔投資組合%</th><th>間接來源</th></tr></thead>';
-    var body = top.map(function(e){
-      var pct = e.total/data.totalPortfolio*100;
-      var srcKey = 'overlap-'+e.code;
-      var srcOpen = !!expanded[srcKey];
-      var srcText = e.from.join('、')||'—';
-      var srcCell = e.from.length
-        ? '<span class="note'+(srcOpen?'':' clamp')+'" style="max-width:26ch;">'+esc(srcText)+'</span>'
-        : '—';
-      var srcTd = e.from.length
-        ? '<td style="white-space:normal;cursor:pointer;" data-notetoggle="'+esc(srcKey)+'">'+srcCell+'</td>'
-        : '<td style="white-space:normal">'+srcCell+'</td>';
-      return '<tr><td>'+esc(e.name)+'</td><td class="code">'+esc(e.code)+'</td><td class="num">'+(e.direct>0?fmtTWD(e.direct):'—')+'</td><td class="num">'+(e.indirect>0?fmtTWD(e.indirect):'—')+'</td><td class="num" style="font-weight:600">'+fmtTWD(e.total)+'</td><td class="num">'+pct.toFixed(2)+'%</td>'+srcTd+'</tr>';
-    }).join('');
-    var foot = '<tfoot><tr><td colspan="4">投資組合總市值</td><td class="num">'+fmtTWD(data.totalPortfolio)+'</td><td colspan="2"></td></tr></tfoot>';
-    document.getElementById('overlapTable').innerHTML = head + '<tbody>' + body + '</tbody>' + foot;
   }
 
   // ================= 四、持倉集中度與安全性 =================
@@ -1483,7 +1464,6 @@
     renderTiles();
     renderHoldTable();
     renderTreemap();
-    renderOverlap();
     renderConcentration();
     renderTaxCtrl();
     renderTax();
@@ -1701,14 +1681,6 @@
     var k = el.dataset.foottoggle;
     expanded[k] = !expanded[k];
     renderFoot();
-  });
-
-  document.getElementById('overlapTable').addEventListener('click', function(e){
-    var el = e.target.closest('[data-notetoggle]');
-    if(!el) return;
-    var k = el.dataset.notetoggle;
-    expanded[k] = !expanded[k];
-    renderOverlap();
   });
 
   initHoldTableDelegation();
