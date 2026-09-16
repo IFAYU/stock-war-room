@@ -1241,9 +1241,12 @@
       var srcOpen = !!expanded[srcKey];
       var srcText = e.from.join('、')||'—';
       var srcCell = e.from.length
-        ? '<span class="note'+(srcOpen?'':' clamp')+'" data-notetoggle="'+esc(srcKey)+'" style="max-width:26ch;">'+esc(srcText)+'</span>'
+        ? '<span class="note'+(srcOpen?'':' clamp')+'" style="max-width:26ch;">'+esc(srcText)+'</span>'
         : '—';
-      return '<tr><td>'+esc(e.name)+'</td><td class="code">'+esc(e.code)+'</td><td class="num">'+(e.direct>0?fmtTWD(e.direct):'—')+'</td><td class="num">'+(e.indirect>0?fmtTWD(e.indirect):'—')+'</td><td class="num" style="font-weight:600">'+fmtTWD(e.total)+'</td><td class="num">'+pct.toFixed(2)+'%</td><td style="white-space:normal">'+srcCell+'</td></tr>';
+      var srcTd = e.from.length
+        ? '<td style="white-space:normal;cursor:pointer;" data-notetoggle="'+esc(srcKey)+'">'+srcCell+'</td>'
+        : '<td style="white-space:normal">'+srcCell+'</td>';
+      return '<tr><td>'+esc(e.name)+'</td><td class="code">'+esc(e.code)+'</td><td class="num">'+(e.direct>0?fmtTWD(e.direct):'—')+'</td><td class="num">'+(e.indirect>0?fmtTWD(e.indirect):'—')+'</td><td class="num" style="font-weight:600">'+fmtTWD(e.total)+'</td><td class="num">'+pct.toFixed(2)+'%</td>'+srcTd+'</tr>';
     }).join('');
     var foot = '<tfoot><tr><td colspan="4">投資組合總市值</td><td class="num">'+fmtTWD(data.totalPortfolio)+'</td><td colspan="2"></td></tr></tfoot>';
     document.getElementById('overlapTable').innerHTML = head + '<tbody>' + body + '</tbody>' + foot;
