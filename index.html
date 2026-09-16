@@ -17,17 +17,6 @@
 </head>
 <body>
 <style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
-<div id="diagBar" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#c0392b;color:#fff;font:600 13px monospace;padding:6px 10px;text-align:center;">
-  建置版本：2026-09-16-23:10　｜　全域點擊次數：<span id="diagClickCount">0</span>（點畫面任何地方測試）
-</div>
-<div style="height:32px;"></div>
-<script>
-  (function(){
-    var n = 0;
-    var el = document.getElementById('diagClickCount');
-    document.addEventListener('click', function(){ n++; el.textContent = n; }, true);
-  })();
-</script>
 <style>
   :root{
     --bg:#f6f3ec; --surface:#ffffff; --surface-2:#efeadf; --ink:#20241f; --muted:#6b6a5f; --line:#e2ddcf;
@@ -376,7 +365,11 @@
   <section>
     <div class="sec-num"><span class="n">三</span><h2>全曝險穿透分析</h2></div>
     <div class="sec-head"><span class="hint">把你直接持有的個股，加上透過每一檔ETF／基金依市值加權往下拆到底層的間接曝險，合併統計「你實際對每一家公司的總曝險」——矩形越大代表曝險越高，深色＝直接持有、淺色＝透過ETF/基金間接持有，點矩形看明細</span></div>
-    <div class="treemapWrap"><div class="treemap" id="treemap"></div></div>
+    <div class="treemapWrap">
+      <div class="treemap" id="treemap"></div>
+      <div class="tmLegend"><span><i></i>直接持有</span><span><i class="ind"></i>透過ETF/基金間接持有</span><span>矩形大小＝合計曝險金額，點矩形看明細</span></div>
+      <div class="tmDetail" id="tmDetail"></div>
+    </div>
   </section>
 
   <section>
@@ -1212,8 +1205,7 @@
         (showLabel ? '<div class="tm-label">'+esc(e.name)+'<br><span class="tm-val">'+pct.toFixed(1)+'%</span></div>' : '') +
       '</div>';
     }).join('');
-    el.innerHTML = html + '<div class="tmLegend"><span><i></i>直接持有</span><span><i class="ind"></i>透過ETF/基金間接持有</span><span>矩形大小＝合計曝險金額，點矩形看明細</span></div>' +
-      '<div class="tmDetail" id="tmDetail"></div>';
+    el.innerHTML = html;
     document.querySelectorAll('#treemap .tmcell').forEach(function(cell){
       cell.addEventListener('click', function(){
         var key = cell.dataset.tmkey;
