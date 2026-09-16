@@ -1,0 +1,1691 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="存股戰情室">
+<meta name="theme-color" content="#f6f3ec">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%92%B9</text></svg>">
+<title>存股戰情室</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.14.1/firebase-app-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.14.1/firebase-auth-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.14.1/firebase-firestore-compat.js"></script>
+</head>
+<body>
+<style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+<style>
+  :root{
+    --bg:#f6f3ec; --surface:#ffffff; --surface-2:#efeadf; --ink:#20241f; --muted:#6b6a5f; --line:#e2ddcf;
+    --accent:#2b4c6f; --accent-ink:#ffffff; --accent-soft:#e4ecf2;
+    --gain:#b23a2e; --loss:#1e7a4c; --warn:#a8631a; --warn-soft:#f7ecdc; --danger:#96281f; --danger-soft:#f5e2df;
+    --cat-tw:#2b4c6f; --cat-us:#b8752e; --cat-fund:#3f8f7a;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#15181a; --surface:#1e2225; --surface-2:#262b2e; --ink:#eceae2; --muted:#9a988d;
+      --line:#33383b; --accent:#7fa3c4; --accent-ink:#12181d; --accent-soft:#233440;
+      --gain:#e0685a; --loss:#4fb989; --warn:#dba455; --warn-soft:#3a2f1c;
+      --danger:#e2685c; --danger-soft:#3a2320;
+      --cat-tw:#7fa3c4; --cat-us:#dba05a; --cat-fund:#5fb39c;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#15181a; --surface:#1e2225; --surface-2:#262b2e; --ink:#eceae2; --muted:#9a988d;
+    --line:#33383b; --accent:#7fa3c4; --accent-ink:#12181d; --accent-soft:#233440;
+    --gain:#e0685a; --loss:#4fb989; --warn:#dba455; --warn-soft:#3a2f1c;
+    --danger:#e2685c; --danger-soft:#3a2320;
+    --cat-tw:#7fa3c4; --cat-us:#dba05a; --cat-fund:#5fb39c;
+    color-scheme: dark;
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    padding-inline:16px; padding-block:28px 60px;
+  }
+  .wrap{ max-width:1240px; margin:0 auto; display:flex; flex-direction:column; gap:34px; }
+
+  h1,h2,h3{ font-family:"Noto Serif TC", "Noto Sans TC", serif; font-weight:700; text-wrap:balance; margin:0; }
+
+  header.page{ display:flex; flex-direction:column; gap:6px; padding-bottom:18px; border-bottom:2px solid var(--ink); }
+  header.page .eyebrow{ font-size:12.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); font-weight:600; }
+  header.page h1{ font-size:clamp(26px,4vw,34px); color:var(--ink); }
+  header.page .sub{ color:var(--muted); font-size:14px; max-width:72ch; line-height:1.6; }
+  header.page .genat{ font-size:12px; color:var(--muted); font-family:"IBM Plex Mono",monospace; margin-top:4px; }
+
+  .fxbar{
+    display:flex; flex-wrap:wrap; align-items:center; gap:10px 18px;
+    background:var(--surface); border:1px solid var(--line); border-radius:12px;
+    padding:12px 16px; font-size:13.5px; color:var(--muted);
+  }
+  .fxbar b{ color:var(--ink); font-weight:600; }
+  .fxbar input{
+    width:76px; font:600 14px/1.2 "IBM Plex Mono", monospace; text-align:right;
+    background:var(--surface-2); color:var(--ink); border:1px solid var(--line);
+    border-radius:6px; padding:5px 8px;
+  }
+  .fxbar .resetbtn{
+    margin-left:auto; border:1px solid var(--line); background:var(--surface-2); color:var(--ink);
+    font:600 13px "Noto Sans TC"; padding:7px 14px; border-radius:8px; cursor:pointer;
+  }
+  .fxbar .resetbtn:hover{ border-color:var(--accent); color:var(--accent); }
+  .priceLive{ font-size:10.5px; color:var(--muted); display:block; margin-top:2px; font-family:"IBM Plex Mono",monospace; white-space:nowrap; }
+  .priceLive.stale{ color:var(--warn); }
+
+  section{ display:flex; flex-direction:column; gap:12px; }
+  .sec-num{ display:flex; align-items:baseline; gap:12px; }
+  .sec-num .n{ font-family:"Noto Serif TC",serif; font-size:13px; font-weight:700; color:var(--accent); letter-spacing:.06em; }
+  .sec-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .sec-head h2{ font-size:19px; }
+  .sec-head .hint{ font-size:12.5px; color:var(--muted); }
+
+  /* ---- 總覽報告卡（圓餅圖＋分類table）---- */
+  .overviewCard{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:24px; display:grid; grid-template-columns:220px 1fr; gap:28px; align-items:center; }
+  .donutWrap{ display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .donutStack{ position:relative; width:200px; height:200px; flex:none; }
+  /* 圓環改用純 CSS conic-gradient 畫（不用 SVG），跟表格色塊走同一條已驗證會動的路徑 */
+  .donutRing{ position:absolute; inset:0; width:200px; height:200px; border-radius:50%; cursor:pointer; transition:filter .15s ease; }
+  .donutRing:hover{ filter:brightness(1.08) saturate(1.1); }
+  .donutRing::after{ content:''; position:absolute; inset:22px; border-radius:50%; background:var(--surface); }
+  .donutCenter{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; pointer-events:none; }
+  .donutCenter .cv{ font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; font-size:15px; font-weight:700; }
+  .donutCenter .cl{ font-size:11.5px; color:var(--muted); margin-top:2px; }
+  .donutHint{ font-size:11px; color:var(--muted); text-align:center; }
+
+  .catTable{ width:100%; border-collapse:collapse; font-size:13px; }
+  .catTable th{ text-align:right; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; padding:6px 8px; border-bottom:1px solid var(--line); }
+  .catTable th:first-child, .catTable td:first-child{ text-align:left; }
+  .catTable td{ text-align:right; padding:9px 8px; border-bottom:1px solid var(--line); font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; }
+  .catTable tr.catrow{ cursor:pointer; }
+  .catTable tr.catrow:hover td, .catTable tr.catrow.active td{ background:var(--surface-2); }
+  .catTable .swatch{ display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:7px; vertical-align:middle; }
+  .catTable .catname{ font-family:"Noto Sans TC",sans-serif; font-weight:600; }
+  .catTable tfoot td{ font-weight:700; border-top:2px solid var(--ink); border-bottom:none; }
+  .catTable td.gain{ color:var(--gain); }
+  .catTable td.loss{ color:var(--loss); }
+
+  .tiles{ display:grid; grid-template-columns:repeat(auto-fit,minmax(168px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+  .tile{ background:var(--surface); padding:16px 16px 14px; display:flex; flex-direction:column; gap:6px; min-width:0; }
+  .tile .label{ font-size:12px; color:var(--muted); font-weight:600; letter-spacing:.02em; }
+  .tile .value{ font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; font-size:clamp(13px,1.7vw,17px); font-weight:600; line-height:1.2; overflow-wrap:anywhere; }
+  .tile .sub{ font-size:12px; color:var(--muted); font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; }
+  .tile.accent .value{ color:var(--accent); }
+  .tile .value.gain{ color:var(--gain); }
+  .tile .value.loss{ color:var(--loss); }
+  .tile .value.warn{ color:var(--warn); }
+
+  .tabs{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .tabs button{
+    font:600 13px "Noto Sans TC"; padding:7px 14px; border-radius:999px; cursor:pointer;
+    border:1px solid var(--line); background:var(--surface); color:var(--muted);
+  }
+  .tabs button.active{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+
+  .tblwrap{ overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:var(--surface); }
+  table{ border-collapse:collapse; width:100%; min-width:940px; font-size:13px; }
+  table.cal{ min-width:1180px; }
+  table.tax{ min-width:900px; }
+  table.overlap{ min-width:680px; }
+  th,td{ padding:9px 10px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap; }
+  th:first-child,td:first-child{ text-align:left; white-space:normal; min-width:120px; }
+  thead th{ font-size:11.5px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.03em; background:var(--surface-2); position:sticky; top:0; }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:hover td{ background:var(--surface-2); }
+  td.num,th.num{ font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; }
+  td .name{ font-weight:600; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  td .code{ color:var(--muted); font-family:"IBM Plex Mono",monospace; font-size:11.5px; }
+  td.gain{ color:var(--gain); }
+  td.loss{ color:var(--loss); }
+  tr.placeholder td{ background:var(--warn-soft); }
+  tr.sub-row td{ background:var(--surface-2); padding:0; }
+  .note{ font-size:11.5px; color:var(--muted); display:block; margin-top:2px; max-width:36ch; white-space:normal; cursor:pointer; }
+  .note.warn{ color:var(--warn); }
+  .note.clamp{ display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; }
+  .note::after{ content:'（點擊展開/收合說明）'; display:block; font-size:10px; opacity:.6; text-decoration:underline; margin-top:2px; }
+  .tag{ font-size:10.5px; font-weight:700; padding:1px 6px; border-radius:999px; }
+  .tag.confirmed{ background:var(--accent-soft); color:var(--accent); }
+  .tag.forecast{ background:var(--warn-soft); color:var(--warn); }
+
+  input.cell{
+    width:100%; min-width:64px; text-align:right; font:500 13px "IBM Plex Mono",monospace;
+    background:transparent; color:var(--ink); border:1px solid transparent; border-radius:5px; padding:4px 5px;
+    box-sizing:border-box;
+  }
+  input.cell:hover{ border-color:var(--line); }
+  input.cell:focus{ outline:none; border-color:var(--accent); background:var(--accent-soft); }
+  tfoot td{ font-weight:700; background:var(--surface-2); border-top:2px solid var(--line); border-bottom:none; }
+
+  .rowbtn{
+    border:1px solid var(--line); background:var(--surface); color:var(--muted); cursor:pointer;
+    border-radius:6px; width:24px; height:24px; font-size:13px; line-height:1; flex:none;
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+  .rowbtn:hover{ border-color:var(--accent); color:var(--accent); }
+  .rowbtn.del:hover{ border-color:var(--danger); color:var(--danger); background:var(--danger-soft); }
+  .rowbtn.small{ width:20px; height:20px; font-size:11px; }
+
+  .addbar{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:10px 12px; border-top:1px dashed var(--line); background:var(--surface-2); }
+  .addbar input{
+    font:500 13px "Noto Sans TC"; padding:6px 9px; border:1px solid var(--line); border-radius:6px;
+    background:var(--surface); color:var(--ink);
+  }
+  .addbar input.code{ width:110px; font-family:"IBM Plex Mono",monospace; }
+  .addbar input.name{ width:180px; }
+  .addbar button{
+    font:600 13px "Noto Sans TC"; padding:7px 14px; border-radius:8px; cursor:pointer;
+    border:1px solid var(--accent); background:var(--accent); color:var(--accent-ink);
+  }
+  .addbar .hint2{ font-size:12px; color:var(--muted); width:100%; }
+
+  .subdetail{ padding:12px 16px 16px 34px; display:flex; flex-direction:column; gap:14px; }
+  .subdetail h4{ font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin:0 0 6px; }
+  .subdetail table{ min-width:0; font-size:12.5px; }
+  .subdetail th,.subdetail td{ padding:5px 7px; }
+  .paycell{ width:56px; }
+  .payMonthSel{ font:500 12.5px "IBM Plex Mono",monospace; padding:3px 4px; border:1px solid var(--line); border-radius:5px; background:var(--surface); color:var(--ink); }
+  .payChk{ width:16px; height:16px; }
+
+  .chartcard{ background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:18px 16px 10px; }
+  .chartcard svg text{ fill:var(--muted); font-family:"IBM Plex Mono",monospace; }
+  .chartcard .bar{ fill:var(--accent); }
+  .chartcard .bar.forecast{ fill:var(--muted); opacity:.55; }
+  .chartcard .bar:hover{ fill:var(--gain); }
+  .chartcard .zeroline{ stroke:var(--line); }
+  .chartcard .barlabel{ fill:var(--ink); font-weight:600; }
+
+  .treemapWrap{ background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px; }
+  .treemap{ position:relative; width:100%; aspect-ratio:16/8; min-height:280px; }
+  .tmcell{
+    position:absolute; box-sizing:border-box; border:1.5px solid var(--surface);
+    display:flex; flex-direction:column; overflow:hidden; cursor:pointer; border-radius:4px;
+    transition:filter .15s ease, box-shadow .15s ease;
+  }
+  .tmcell:hover, .tmcell.active{ filter:brightness(1.1); box-shadow:0 0 0 2px var(--ink) inset; z-index:5; }
+  .tmcell .tm-direct{ flex:none; background:var(--tmcolor); }
+  .tmcell .tm-indirect{ flex:1; background:var(--tmcolor); opacity:.55; }
+  .tmcell .tm-label{ position:absolute; inset:0; padding:4px 6px; color:#fff; font-size:11px; font-weight:700; text-shadow:0 1px 2px rgba(0,0,0,.5); pointer-events:none; line-height:1.3; overflow:hidden; }
+  .tmcell .tm-label .tm-val{ font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:10.5px; opacity:.9; }
+  .tmDetail{ margin-top:10px; font-size:12.5px; background:var(--surface-2); border-radius:8px; padding:10px 14px; display:none; }
+  .tmDetail.show{ display:block; }
+  .tmLegend{ display:flex; gap:16px; font-size:11.5px; color:var(--muted); margin-top:8px; flex-wrap:wrap; }
+  .tmLegend span{ display:inline-flex; align-items:center; gap:5px; }
+  .tmLegend i{ width:12px; height:12px; border-radius:3px; display:inline-block; background:var(--accent); }
+  .tmLegend i.ind{ opacity:.55; }
+
+  .barcard{ background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 16px; display:flex; flex-direction:column; gap:9px; }
+  .barrow{ display:flex; align-items:center; gap:10px; font-size:12.5px; }
+  .barrow .bl-name{ width:150px; flex:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .barrow .bl-track{ flex:1; background:var(--surface-2); border-radius:4px; height:16px; overflow:hidden; }
+  .barrow .bl-fill{ height:100%; background:var(--accent); border-radius:4px; transition:width .5s ease; }
+  .barrow .bl-val{ width:auto; flex:none; font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; color:var(--muted); white-space:nowrap; }
+
+  .callout{ border:1px solid var(--line); border-radius:12px; padding:16px 18px; background:var(--surface); display:flex; flex-direction:column; gap:10px; font-size:13.5px; line-height:1.75; }
+  .callout.risk{ border-color:color-mix(in srgb, var(--warn) 45%, var(--line)); background:var(--warn-soft); }
+  .callout ul{ margin:0; padding-left:1.2em; display:flex; flex-direction:column; gap:6px; }
+  .callout b.hi{ color:var(--warn); }
+  .callout b.bad{ color:var(--danger); }
+
+  .taxctrl{ display:flex; flex-wrap:wrap; gap:14px 22px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 16px; align-items:flex-end; }
+  .taxctrl .field{ display:flex; flex-direction:column; gap:4px; }
+  .taxctrl label{ font-size:11.5px; color:var(--muted); font-weight:600; }
+  .taxctrl input{
+    font:600 14px "IBM Plex Mono",monospace; padding:6px 9px; border:1px solid var(--line); border-radius:6px;
+    background:var(--surface-2); color:var(--ink); width:130px; text-align:right;
+  }
+  .taxctrl .bracket{ font-size:12.5px; color:var(--accent); font-weight:600; }
+
+  .taxresult{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; }
+  .taxcard{ border:1px solid var(--line); border-radius:12px; padding:14px 16px; background:var(--surface); display:flex; flex-direction:column; gap:5px; min-width:0; }
+  .taxcard.reco{ border-color:var(--accent); background:var(--accent-soft); }
+  .taxcard .t-label{ font-size:12px; color:var(--muted); font-weight:600; }
+  .taxcard .t-value{ font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; font-size:16px; font-weight:700; overflow-wrap:anywhere; }
+  .taxcard .t-sub{ font-size:11.5px; color:var(--muted); }
+
+  .foot{ display:flex; flex-direction:column; gap:8px; font-size:12.5px; color:var(--muted); line-height:1.7; border-top:1px solid var(--line); padding-top:16px; }
+  .foot b{ color:var(--ink); }
+
+  @media (max-width:640px){
+    .tile .value{ font-size:14px; }
+    header.page h1{ font-size:24px; }
+    .barrow .bl-name{ width:96px; }
+    .overviewCard{ grid-template-columns:1fr; }
+  }
+
+  #authGate{
+    position:fixed; inset:0; z-index:10000; display:flex; align-items:center; justify-content:center;
+    background:var(--bg); padding:20px;
+  }
+  #authGate .box{
+    background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:32px 28px;
+    max-width:340px; width:100%; box-shadow:0 8px 30px rgba(0,0,0,.15);
+  }
+  #authGate h2{ font-size:18px; margin-bottom:6px; }
+  #authGate .sub{ color:var(--muted); font-size:13px; margin-bottom:20px; line-height:1.6; }
+  #authGate input{
+    width:100%; font:500 14px "Noto Sans TC"; padding:9px 12px; border:1px solid var(--line);
+    border-radius:8px; background:var(--surface-2); color:var(--ink); margin-bottom:10px; box-sizing:border-box;
+  }
+  #authGate button{
+    width:100%; font:600 14px "Noto Sans TC"; padding:10px; border-radius:8px; cursor:pointer;
+    border:1px solid var(--accent); background:var(--accent); color:var(--accent-ink); margin-top:4px;
+  }
+  #loginError{ font-size:12.5px; color:var(--danger); margin-top:8px; min-height:16px; }
+  .cloudbar{ display:flex; align-items:center; gap:10px; font-size:12px; color:var(--muted); }
+  .cloudbar #logoutBtn{
+    margin-left:auto; border:1px solid var(--line); background:var(--surface-2); color:var(--muted);
+    font:600 12px "Noto Sans TC"; padding:4px 10px; border-radius:6px; cursor:pointer;
+  }
+</style>
+
+<div id="authGate" style="display:flex;">
+  <div class="box">
+    <h2>存股戰情室</h2>
+    <div class="sub">這裡是你私人的持股/配息資料，需要登入才能查看與編輯，資料存在雲端，換裝置也會同步。</div>
+    <form id="loginForm">
+      <input id="loginEmail" type="email" placeholder="Email" autocomplete="username" required>
+      <input id="loginPassword" type="password" placeholder="密碼" autocomplete="current-password" required>
+      <button type="submit">登入</button>
+    </form>
+    <div id="loginError"></div>
+  </div>
+</div>
+
+<div class="wrap" id="mainWrap" style="display:none;">
+
+  <header class="page">
+    <div class="eyebrow">存股帳本 · 個人配息推演與稅務試算報告</div>
+    <h1>存股戰情室</h1>
+    <div class="sub">整理國泰證券台股／複委託美股／基金三本庫存，逐筆記錄每一次已公告的配息金額並推算尚未公告的部分；用玩股網成分股資料統整所有ETF的底層曝險、CMoney股利組成資料試算稅負。所有數字（含持股本身、每筆配息、稅務假設）皆可直接編輯，也能新增或刪除整列持股與整筆配息紀錄。</div>
+    <div class="genat" id="genAt"></div>
+  </header>
+
+  <div class="fxbar">
+    <span>美元換算匯率　<b>USD → TWD</b></span>
+    <input id="fx" class="cell" type="number" step="0.01" value="31.6" style="border-color:var(--line)">
+    <span id="asof">庫存快照：2026/09/11（國泰證券App）</span>
+    <span id="priceAsOf">收盤價：讀取中…</span>
+    <button class="resetbtn" id="resetBtn">重設為預設庫存資料</button>
+  </div>
+
+  <div class="cloudbar">
+    <span id="cloudStatus">雲端同步：連線中…</span>
+    <button id="logoutBtn">登出</button>
+  </div>
+
+  <section>
+    <div class="sec-num"><span class="n">一</span><h2>投資組合總覽</h2></div>
+    <div class="overviewCard">
+      <div class="donutWrap">
+        <div class="donutStack">
+          <div class="donutRing" id="donutRing"></div>
+          <div class="donutCenter" id="donutCenter"></div>
+        </div>
+        <div class="donutHint">點圖表或下表任一列查看佔比</div>
+      </div>
+      <div class="tblwrap" style="border:none;">
+        <table class="catTable" id="catTable"></table>
+      </div>
+    </div>
+    <div class="tiles" id="tiles"></div>
+  </section>
+
+  <section>
+    <div class="sec-num"><span class="n">二</span><h2>持股明細</h2></div>
+    <div class="sec-head">
+      <span class="hint">張數／市價／成本皆可編輯，但台股/美股個股與ETF的「市價」會被每日自動收盤價排程覆寫（見市價欄位下方日期標記）；帶 🔍 圖示的是 ETF；點左側▸展開可看成分股與逐筆配息紀錄；可在表格下方新增或刪除整列</span>
+    </div>
+    <div class="tabs" id="tabs">
+      <button data-g="tw" class="active">台股現股／ETF</button>
+      <button data-g="us">複委託美股</button>
+      <button data-g="fund">基金</button>
+    </div>
+    <div class="tblwrap"><table id="holdTable"></table></div>
+  </section>
+
+  <section>
+    <div class="sec-num"><span class="n">三</span><h2>全曝險穿透分析</h2></div>
+    <div class="sec-head"><span class="hint">把你直接持有的個股，加上透過每一檔ETF／基金依市值加權往下拆到底層的間接曝險，合併統計「你實際對每一家公司的總曝險」——矩形越大代表曝險越高，深色＝直接持有、淺色＝透過ETF/基金間接持有，點矩形看明細</span></div>
+    <div class="treemapWrap"><div class="treemap" id="treemap"></div></div>
+    <div class="tblwrap"><table class="overlap" id="overlapTable"></table></div>
+  </section>
+
+  <section>
+    <div class="sec-num"><span class="n">四</span><h2>持倉集中度與安全性提示</h2></div>
+    <div class="sec-head"><span class="hint">依目前市值結構自動計算，數字會隨上面持股編輯即時更新</span></div>
+    <div class="tiles" id="riskTiles"></div>
+    <div class="callout risk" id="riskCallout"></div>
+  </section>
+
+  <section>
+    <div class="sec-num"><span class="n">五</span><h2>股利稅務試算</h2></div>
+    <div class="sec-head"><span class="hint">依每一筆已公告/推估配息各自的股利組成拆分應稅/免稅，估算合併計稅 vs 28%分開計稅、二代健保補充保費</span></div>
+    <div class="taxctrl" id="taxCtrl"></div>
+    <div class="tblwrap"><table class="tax" id="taxTable"></table></div>
+    <div class="taxresult" id="taxResult"></div>
+  </section>
+
+  <section>
+    <div class="sec-num"><span class="n">六</span><h2>全年配息預估月曆</h2></div>
+    <div class="sec-head"><span class="hint">深色長條＝已公告的實際金額；淺色長條＝尚未公告、沿用最新水準推估</span></div>
+    <div class="tblwrap"><table class="cal" id="calTable"></table></div>
+    <div class="chartcard"><svg id="calChart" viewBox="0 0 900 220" style="width:100%;height:auto;display:block"></svg></div>
+  </section>
+
+  <section>
+    <div class="sec-num"><span class="n">七</span><h2>每月定期定額扣款</h2></div>
+    <div class="sec-head"><span class="hint">目前設定中的自動扣款，屬於投入現金流，非配息收入；下表依台股/美股/基金分類小計</span></div>
+    <div class="tblwrap">
+      <table id="dcaTable" style="min-width:640px">
+        <thead><tr><th>扣款日</th><th>標的</th><th>分類</th><th class="num">每期金額</th><th class="num">約當台幣</th></tr></thead>
+        <tbody id="dcaBody"></tbody>
+        <tfoot id="dcaFoot"></tfoot>
+      </table>
+    </div>
+  </section>
+
+  <div class="foot" id="footNotes"></div>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---- ETF 成分股（玩股網 wantgoo.com/stock/etf/<代號>/constituent，2026/09/10-11 查證） ----
+  var CONSTITUENTS = {
+    '00712': [
+      {name:'安納利資本管理公司', code:'NLY', weight:27.51},{name:'AGNC投資公司', code:'AGNC', weight:19.90},
+      {name:'史塔屋資產信託', code:'STWD', weight:9.31},{name:'Rithm資本公司', code:'RITM', weight:9.15},
+      {name:'德尼克斯資本公司', code:'DX', weight:4.77},{name:'亞幕住宅不動產投資信託', code:'ARR', weight:4.23},
+      {name:'百仕通抵押信託', code:'BXMT', weight:3.11},{name:'艾靈頓金融', code:'EFC', weight:2.58},
+      {name:'蘭嶼資本', code:'ORC', weight:2.08},{name:'Arbor Realty Trust', code:'ABR', weight:1.82}
+    ],
+    '0056': [
+      {name:'南亞', code:'1303', weight:7.86},{name:'南亞科', code:'2408', weight:4.24},
+      {name:'華碩', code:'2357', weight:4.11},{name:'華南金', code:'2880', weight:4.07},
+      {name:'永豐金', code:'2890', weight:4.06},{name:'華邦電', code:'2344', weight:3.75},
+      {name:'中信金', code:'2891', weight:3.74},{name:'緯創', code:'3231', weight:3.69},
+      {name:'廣達', code:'2382', weight:3.63},{name:'兆豐金', code:'2886', weight:3.57}
+    ],
+    '00919': [
+      {name:'富邦金', code:'2881', weight:14.97},{name:'國泰金', code:'2882', weight:12.48},
+      {name:'中信金', code:'2891', weight:10.12},{name:'廣達', code:'2382', weight:9.96},
+      {name:'台新新光金', code:'2887', weight:8.85},{name:'華碩', code:'2357', weight:5.92},
+      {name:'凱基金', code:'2883', weight:5.40},{name:'長榮', code:'2603', weight:3.83},
+      {name:'聯詠', code:'3034', weight:3.31},{name:'瑞昱', code:'2379', weight:2.71}
+    ],
+    '00918': [
+      {name:'台新新光金', code:'2887', weight:8.06},{name:'華碩', code:'2357', weight:7.41},
+      {name:'緯穎', code:'6669', weight:6.96},{name:'玉山金', code:'2884', weight:6.12},
+      {name:'長榮', code:'2603', weight:5.90},{name:'中信金', code:'2891', weight:5.60},
+      {name:'兆豐金', code:'2886', weight:5.10},{name:'廣達', code:'2382', weight:4.88},
+      {name:'緯創', code:'3231', weight:4.86},{name:'永豐金', code:'2890', weight:4.36}
+    ],
+    '0050': [
+      {name:'台積電', code:'2330', weight:57.01},{name:'聯發科', code:'2454', weight:6.53},
+      {name:'台達電', code:'2308', weight:3.03},{name:'鴻海', code:'2317', weight:2.93},
+      {name:'日月光投控', code:'3711', weight:1.99},{name:'聯電', code:'2303', weight:1.59},
+      {name:'台光電', code:'2383', weight:1.51},{name:'欣興', code:'3037', weight:1.25},
+      {name:'富邦金', code:'2881', weight:1.20},{name:'中信金', code:'2891', weight:1.15}
+    ],
+    '00662': [
+      {name:'NVIDIA', code:'NVDA', weight:8.42},{name:'APPLE', code:'AAPL', weight:7.64},
+      {name:'MICROSOFT', code:'MSFT', weight:5.83},{name:'MICRON TECHNOLOGY', code:'MU', weight:4.85},
+      {name:'AMAZON.COM', code:'AMZN', weight:4.32},{name:'ADVANCED MICRO DEVICES', code:'AMD', weight:3.61},
+      {name:'Alphabet Inc-CL A', code:'GOOGL', weight:3.09},{name:'META PLATFORMS', code:'META', weight:3.04},
+      {name:'TESLA', code:'TSLA', weight:2.89},{name:'Alphabet Inc-CL C', code:'GOOG', weight:2.87}
+    ],
+    '00713': [
+      {name:'台灣大哥大', code:'3045', weight:9.55},{name:'統一', code:'1216', weight:8.23},
+      {name:'第一金', code:'2892', weight:6.74},{name:'統一超', code:'2912', weight:6.27},
+      {name:'遠傳', code:'4904', weight:5.07},{name:'元大金', code:'2884', weight:4.89},
+      {name:'華南金', code:'2880', weight:4.54},{name:'遠東新', code:'1402', weight:3.57},
+      {name:'上海商銀', code:'5876', weight:3.23},{name:'廣達', code:'2382', weight:2.28}
+    ]
+  };
+
+  // ---- 基金持股（MoneyDJ／Yahoo股市，2026/07/31或09/11查證，個股層級明細） ----
+  var FUND_HOLDINGS = {
+    '10340003': [ // 安聯台灣科技基金
+      {name:'台積電', code:'2330', weight:8.22},{name:'旺矽', code:'6223', weight:7.61},
+      {name:'台光電', code:'2383', weight:5.64},{name:'欣興', code:'3037', weight:4.52},
+      {name:'台燿', code:'6274', weight:4.26},{name:'創意', code:'3443', weight:4.22},
+      {name:'聯電', code:'2303', weight:4.17},{name:'奇鋐', code:'3017', weight:3.89},
+      {name:'穎崴', code:'6515', weight:3.87},{name:'國巨', code:'2327', weight:3.38}
+    ],
+    '10350113': [ // 國泰台灣高股息(月配)
+      {name:'台積電', code:'2330', weight:9.36},{name:'聯發科', code:'2454', weight:5.71},
+      {name:'台光電', code:'2383', weight:5.53},{name:'致茂', code:'2360', weight:5.26},
+      {name:'緯穎', code:'6669', weight:4.65},{name:'旺矽', code:'6223', weight:4.31},
+      {name:'欣興', code:'3037', weight:4.25},{name:'台達電', code:'2308', weight:3.55},
+      {name:'信驊', code:'5274', weight:3.12},{name:'川湖', code:'2059', weight:3.03}
+    ],
+    '10090014': [ // 元大台灣加權股價指數基金
+      {name:'台積電', code:'2330', weight:43.17},{name:'聯發科', code:'2454', weight:3.86},
+      {name:'台達電', code:'2308', weight:2.97},{name:'鴻海', code:'2317', weight:2.41},
+      {name:'日月光投控', code:'3711', weight:1.70},{name:'富邦金', code:'2881', weight:1.25},
+      {name:'台光電', code:'2383', weight:1.19},{name:'聯電', code:'2303', weight:1.04},
+      {name:'中信金', code:'2891', weight:0.96},{name:'國泰金', code:'2882', weight:0.95}
+    ],
+    '00040059': [ // 安聯盧森堡收益成長，全球股債混合，高度分散，前10大僅約13.9%淨值
+      {name:'NVIDIA', code:'NVDA', weight:2.80},{name:'Apple', code:'AAPL', weight:2.48},
+      {name:'Amazon.com', code:'AMZN', weight:1.71},{name:'Microsoft', code:'MSFT', weight:1.38},
+      {name:'Alphabet', code:'GOOGL', weight:1.26},{name:'Welltower債券', code:'WELL-B', weight:0.87},
+      {name:'Johnson & Johnson', code:'JNJ', weight:0.87},{name:'Broadcom', code:'AVGO', weight:0.86},
+      {name:'Live Nation債券', code:'LYV-B', weight:0.85},{name:'Wells Fargo特別股', code:'WFC-P', weight:0.81}
+    ]
+  };
+
+  function T100(c54,overseas,exempt){ return {c54:c54,overseas:overseas,exempt:exempt}; }
+
+  var DEFAULTS = {
+    fx: 31.6,
+    baseIncome: 0,
+    otherOverseas: 0,
+    holdings: [
+      // ---- 台股現股 / ETF ----
+      {g:'tw', code:'00712', name:'復華富時不動產', qty:0, price:8.38, cost:0, value:0, currency:'TWD', distCcy:'TWD',
+        payments:[
+          {month:3, amount:0.190, confirmed:true, tax:T100(0,95,5)},
+          {month:6, amount:0.235, confirmed:true, tax:T100(0,95,5)},
+          {month:9, amount:0.200, confirmed:true, tax:T100(0,95,5)},
+          {month:12, amount:0.200, confirmed:false, tax:T100(0,95,5)}
+        ], received:0,
+        note:'REIT ETF，季配；3/6/9月為玩股網逐筆查證金額，12月尚未公告沿用推估；成分股為美國抵押型REIT，配息屬海外所得(71/73)而非國內54C'},
+      {g:'tw', code:'6156', name:'松上', qty:0, price:20.45, cost:0, value:0, currency:'TWD', distCcy:'TWD',
+        payments:[{month:8, amount:1.0, confirmed:true, tax:T100(100,0,0)}], received:0,
+        note:'年配，2025年度1.0元/股，8月已除息；2026年度是否已重新配發、金額是否相同未逐年查證'},
+      {g:'tw', code:'6123', name:'上奇', qty:0, price:42.5, cost:0, value:0, currency:'TWD', distCcy:'TWD',
+        payments:[
+          {month:6, amount:2.6, confirmed:true, tax:T100(100,0,0)},
+          {month:12, amount:2.6, confirmed:false, tax:T100(100,0,0)}
+        ], received:0,
+        note:'半年配，2026上半年已配2.6元(6/16除息)；12月尚未公告，沿用上半年金額推估'},
+      {g:'tw', code:'7731', name:'火星生技', qty:0, price:4.28, cost:0, value:0, currency:'TWD', distCcy:'TWD',
+        payments:[{month:8, amount:0.06, confirmed:true, tax:T100(100,0,0)}], received:0,
+        note:'⚠️配息極不穩定，前一年度曾虧損，8月已配發0.06元，金額僅供參考'},
+      {g:'tw', code:'1268', name:'漢來美食', qty:0, price:171.5, cost:0, value:0, currency:'TWD', distCcy:'TWD',
+        payments:[{month:9, amount:7.5, confirmed:false, tax:T100(100,0,0)}], received:0,
+        note:'⚠️2026/4/9董事會已決議新一期分派但具體金額未查到公開數字，暫沿用2025年度(2025/9/11發放)金額7.5元估算，請自行查證2026年度實際金額'},
+      {g:'tw', code:'2303', name:'聯電', qty:0, price:140.5, cost:0, value:0, currency:'TWD', distCcy:'TWD',
+        payments:[{month:7, amount:2.608, confirmed:true, tax:T100(100,0,0)}], received:0,
+        note:'年配，2026/7/8已除息，2026/7/30已發放'},
+      {g:'tw', code:'6669', name:'緯穎', qty:0, price:2310, cost:0, value:0, currency:'TWD', distCcy:'TWD',
+        payments:[{month:6, amount:144.391, confirmed:true, tax:T100(100,0,0)}], received:0,
+        note:'年配，2026/6已除息；另配發股票股利20元(未計入現金)'},
+      {g:'tw', code:'2327', name:'國巨', qty:0, price:544, cost:0, value:0, currency:'TWD', distCcy:'TWD',
+        payments:[{month:6, amount:5.998, confirmed:true, tax:T100(100,0,0)}], received:0,
+        note:'年配，2026/6/12已除息'},
+      {g:'tw', code:'1526', name:'日馳', qty:0, price:15.15, cost:0, value:0, currency:'TWD', distCcy:'TWD',
+        payments:[], received:0, note:'⚠️目前暫停配息（近年查無配發紀錄），券商庫存顯示代號1526'},
+      {g:'tw', code:'7427', name:'華上生醫', qty:0, price:71.3, cost:0, value:0, currency:'TWD', distCcy:'TWD',
+        payments:[], received:0, note:'⚠️虧損中，2026/3董事會決議虧損撥補、不發股利'},
+      {g:'tw', code:'6973', name:'永立榮', qty:0, price:47.5, cost:0, value:0, currency:'TWD', distCcy:'TWD',
+        payments:[], received:0, note:'⚠️仍處虧損階段，目前無配息'},
+      {g:'tw', code:'0056', name:'元大台灣高股息', qty:0, price:55.3, cost:0, value:0, currency:'TWD', distCcy:'TWD',
+        payments:[
+          {month:1, amount:0.866, confirmed:true, tax:T100(35,0,65)},
+          {month:4, amount:1.000, confirmed:true, tax:T100(35,0,65)},
+          {month:7, amount:1.350, confirmed:true, tax:T100(35,0,65)},
+          {month:10, amount:1.350, confirmed:false, tax:T100(35,0,65)}
+        ], received:0,
+        note:'季配，1/4/7月為玩股網逐筆查證金額(0.866/1.00/1.35元)；10月尚未公告沿用7月金額推估；股利組成僅查到近期概估值(約35%應稅+65%資本利得免稅)，非逐期查證，每次除息仍可能不同'},
+      {g:'tw', code:'00919', name:'群益台灣精選高息', qty:0, price:32.48, cost:0, value:0, currency:'TWD', distCcy:'TWD',
+        payments:[
+          {month:3, amount:0.78, confirmed:true, tax:T100(0,0,100)},
+          {month:6, amount:1.00, confirmed:true, tax:T100(0,0,100)},
+          {month:9, amount:1.10, confirmed:true, tax:T100(0,0,100)},
+          {month:12, amount:1.10, confirmed:false, tax:T100(0,0,100)}
+        ], received:0,
+        note:'季配，3/6/9月為玩股網逐筆金額(0.78/1.00/1.10元，9月已公告尚未除息)；12月沿用9月推估。股利組成依CMoney查證：2026Q1/Q2皆100%為免稅資本利得，9月組成尚未公告故沿用同比例假設——⚠️此檔曾整期100%應稅股利所得(如2025Q4)，務必每次除息重新查CMoney「股利組成」頁面'},
+      {g:'tw', code:'00918', name:'大華優利高填息30', qty:0, price:35.34, cost:0, value:0, currency:'TWD', distCcy:'TWD',
+        payments:[
+          {month:3, amount:0.620, confirmed:true, tax:T100(0,0,100)},
+          {month:6, amount:1.260, confirmed:true, tax:T100(0,0,100)},
+          {month:9, amount:1.750, confirmed:true, tax:T100(0,0,100)},
+          {month:12, amount:1.750, confirmed:false, tax:T100(0,0,100)}
+        ], received:0,
+        note:'季配，3/6/9月為玩股網逐筆金額(0.62/1.26/1.75元，9月已公告)；12月沿用9月推估。股利組成研究指出近2期(2026Q1/Q2)皆100%免稅資本利得，9/12月沿用同假設，⚠️此檔曾整期100%應稅(如2025Q3)，需每次重查'},
+      {g:'tw', code:'0050', name:'元大台灣50', qty:0, price:107.7, cost:0, value:0, currency:'TWD', distCcy:'TWD',
+        payments:[
+          {month:1, amount:1.00, confirmed:true, tax:T100(90,0,10)},
+          {month:7, amount:0.60, confirmed:true, tax:T100(90,0,10)}
+        ], received:0,
+        note:'半年配，2026年1月配1.00元、7月配0.60元(近12個月合計1.60元)；定期定額每月23日NT$5,000；股利組成未逐期查證，90/10為估計值'},
+      {g:'tw', code:'00662', name:'富邦NASDAQ', qty:0, price:0, cost:0, value:0, currency:'TWD', distCcy:'TWD',
+        payments:[], received:0,
+        note:'⚠️張數/成本未提供，請填入目前庫存；追蹤NASDAQ-100為累積型，不配息。定期定額每月18日NT$2,000'},
+      {g:'tw', code:'7855', name:'和運租車', qty:0, price:42.1, cost:0, value:0, currency:'TWD', distCcy:'TWD',
+        payments:[{month:6, amount:3.22, confirmed:true, tax:T100(100,0,0)}], received:0,
+        note:'⚠️券商庫存顯示成交均價/成本皆為0，查無減資或股票股利等公司行動可解釋，原因不明，建議向券商確認實際取得成本（損益%因分母為0而無意義）；年配，2026年度3.22元/股，6月已除息'},
+      {g:'tw', code:'2330', name:'台積電', qty:0, price:2410, cost:0, value:0, currency:'TWD', distCcy:'TWD',
+        payments:[
+          {month:3, amount:6, confirmed:true, tax:T100(100,0,0)},
+          {month:6, amount:6, confirmed:true, tax:T100(100,0,0)},
+          {month:9, amount:7, confirmed:true, tax:T100(100,0,0)},
+          {month:12, amount:7, confirmed:false, tax:T100(100,0,0)}
+        ], received:0,
+        note:'季配，3/6月已除息各6元，9/16將除息7元(已公告)，12月沿用7元推估；⚠️另一資料源查到差異極大金額(0.88元)研判為誤讀，此處採用專門報導台積電除息的文章數字，正式使用前請以公開資訊觀測站或台積電投資人關係公告為準'},
+      {g:'tw', code:'2834', name:'臺企銀', qty:0, price:18, cost:0, value:0, currency:'TWD', distCcy:'TWD',
+        payments:[{month:8, amount:0.3, confirmed:true, tax:T100(100,0,0)}], received:0,
+        note:'年配，2026年度現金股利0.3元/股(另有0.7元股票股利未計入現金配息)，8月已除息；不同資料源金額略有出入，以公開資訊觀測站公告為準'},
+      {g:'tw', code:'00713', name:'元大台灣高息低波', qty:0, price:63.85, cost:0, value:0, currency:'TWD', distCcy:'TWD',
+        payments:[
+          {month:3, amount:0.78, confirmed:true, tax:T100(20,0,80)},
+          {month:6, amount:1.00, confirmed:true, tax:T100(20,0,80)},
+          {month:9, amount:1.25, confirmed:true, tax:T100(20,0,80)},
+          {month:12, amount:1.25, confirmed:false, tax:T100(20,0,80)}
+        ], received:0,
+        note:'季配，3/6/9月為玩股網逐筆金額(0.78/1.00/1.25元，9月已公告)；12月沿用9月推估。股利組成依CMoney近兩期查證為20%應稅股利+80%免稅資本利得，9/12月沿用同比例假設'},
+
+      // ---- 複委託美股 ----
+      {g:'us', code:'KO', name:'可口可樂', qty:0, price:88.29, cost:0, value:0, currency:'USD', distCcy:'USD',
+        payments:[
+          {month:3, amount:0.51, confirmed:true, tax:T100(0,100,0)},
+          {month:6, amount:0.53, confirmed:true, tax:T100(0,100,0)},
+          {month:9, amount:0.53, confirmed:true, tax:T100(0,100,0)},
+          {month:12, amount:0.53, confirmed:false, tax:T100(0,100,0)}
+        ], received:0,
+        note:'季配，近4季約0.51/0.53/0.53/0.53美元(月份為概略重建，非逐筆核對除息日)，9/15將除息0.53美元(已公告)；另定期定額每月15日US$30；美股配息屬海外所得'},
+      {g:'us', code:'VOO', name:'Vanguard S&P500 ETF', qty:0, price:702.56, cost:0, value:0, currency:'USD', distCcy:'USD',
+        payments:[
+          {month:3, amount:1.80, confirmed:true, tax:T100(0,100,0)},
+          {month:6, amount:1.9622, confirmed:true, tax:T100(0,100,0)},
+          {month:9, amount:1.80, confirmed:false, tax:T100(0,100,0)},
+          {month:12, amount:1.80, confirmed:false, tax:T100(0,100,0)}
+        ], received:0,
+        note:'季配，2026/6/26已除息1.9622美元；3月金額為近12個月總額(7.35美元)回推重建，9月(2026/9/28除息)尚未公告故用推估；另定期定額每月5日US$30；美股配息屬海外所得'},
+
+      // ---- 基金 ----
+      {g:'fund', code:'10340003', name:'安聯台灣科技基金', qty:0, price:757.93, cost:0, value:0, currency:'TWD', distCcy:'TWD',
+        payments:[], received:0, note:'累積型，不配息；定期定額每月3日NT$5,000'},
+      {g:'fund', code:'10350113', name:'國泰台灣高股息(月配)', qty:0, price:56.02, cost:0, value:0, currency:'TWD', distCcy:'TWD',
+        payments:[
+          {month:5, amount:0.268, confirmed:true, tax:T100(60,0,40)},
+          {month:6, amount:0.268, confirmed:true, tax:T100(60,0,40)},
+          {month:7, amount:0.48, confirmed:true, tax:T100(60,0,40)},
+          {month:8, amount:0.48, confirmed:true, tax:T100(60,0,40)},
+          {month:9, amount:0.48, confirmed:true, tax:T100(60,0,40)},
+          {month:10, amount:0.48, confirmed:false, tax:T100(60,0,40)},
+          {month:11, amount:0.48, confirmed:false, tax:T100(60,0,40)},
+          {month:12, amount:0.48, confirmed:false, tax:T100(60,0,40)}
+        ], received:0,
+        note:'月配，5-9月為查證到的實際金額(5-6月0.268元,7-9月0.48元)；1-4月沒查到逐月數字，故不編造估算，未列入(不影響已收配息累計欄位，僅影響本工具的今年配息月曆試算)；10-12月尚未公告，沿用9月水準推估；境內基金配息需依當月公告組成表拆分，60/40為概估。⚠️若你有1-4月的實際對帳單金額，可在下方展開列直接新增補上，會更準確'},
+      {g:'fund', code:'10090014', name:'元大台灣加權指數基金', qty:0, price:136.699, cost:0, value:0, currency:'TWD', distCcy:'TWD',
+        payments:[], received:0, note:'不配息(A類累積型)；定期定額每月26日NT$10,000'},
+      {g:'fund', code:'00040059', name:'安聯盧森堡收益成長(美元月配)', qty:0, price:8.4828, cost:0, value:0, currency:'TWD', distCcy:'USD',
+        payments:(function(){
+          var arr=[]; for(var m=5;m<=12;m++){ arr.push({month:m, amount:0.06, confirmed:m<=9, tax:T100(0,100,0)}); } return arr;
+        })(), received:0,
+        note:'⚠️月配，境外(盧森堡)基金配息全數歸類海外所得，非54C；近5個月(5-9月)穩定0.06美元/單位，10-12月沿用同水準推估；1-4月沒查到實際數字，不編造估算、未列入，若有實際對帳單金額可自行在下方展開列新增補上；不計徵二代健保補充保費'}
+    ],
+    dca: [
+      {day:3, code:'10340003', name:'安聯台灣科技基金', g:'fund', amount:5000, ccy:'TWD'},
+      {day:5, code:'VOO', name:'VOO', g:'us', amount:30, ccy:'USD'},
+      {day:15, code:'KO', name:'KO 可口可樂', g:'us', amount:30, ccy:'USD'},
+      {day:18, code:'00662', name:'00662 富邦NASDAQ', g:'tw', amount:2000, ccy:'TWD'},
+      {day:23, code:'0050', name:'0050 元大台灣50', g:'tw', amount:5000, ccy:'TWD'},
+      {day:26, code:'10090014', name:'元大台灣加權指數基金', g:'fund', amount:10000, ccy:'TWD'}
+    ]
+  };
+
+  var STORE_KEY = 'stock-dividend-dashboard-v4';
+  var state = load();
+  var expanded = {};
+  var activeCat = null; // 'tw' | 'us' | 'fund' | null
+
+  // ---- 雲端收盤價（Firestore stockWarRoom/prices：本機排程每天約15:00用Admin SDK寫入，
+  //      這裡用公開唯讀的Firebase web SDK訂閱即時套用。2026-09-16改用這條路徑——原本用
+  //      Claude Artifact的db capability，但headless claude排程環境完全查不到Artifact工具，
+  //      那條路走不通，改用使用者其他系統已經在用的Firestore） ----
+  var livePrices = {};          // '<g>-<code>' -> {price, asOf, source}
+  var livePricesUpdatedAt = null;
+  var livePricesSource = null;
+  function priceKey(h){ return h.g + '-' + h.code; }
+  function isPriceStale(dateStr){
+    try{
+      var d = new Date(dateStr + 'T00:00:00');
+      var diffDays = (new Date() - d) / 86400000;
+      return diffDays > 4; // 涵蓋週末，超過4天沒更新才視為過期
+    }catch(e){ return false; }
+  }
+
+  // 每一筆存檔資料在被拿去 render 之前，都先在這裡逐欄位「消毒」成目前程式碼保證看得懂的形狀。
+  // 這支工具的資料結構之後還會繼續演進（例如這次從 dist/exMonths 改成 payments[]），
+  // 舊瀏覽器存的 localStorage 不會自動跟著變新，單靠「補幾個欄位」的舊寫法遇到結構性改動
+  // （例如 payments 內的物件形狀變了）還是會在後面的 render 函式裡直接丟例外、整頁空白。
+  // 這裡改成：任何一筆看起來不對勁就直接丟棄那筆持股，而不是硬塞進去讓後面炸開。
+  function sanitizeState(s){
+    if(!s || typeof s !== 'object') throw new Error('state 不是物件');
+    if(!Array.isArray(s.holdings)) throw new Error('holdings 不是陣列');
+    s.baseIncome = (typeof s.baseIncome === 'number' && isFinite(s.baseIncome)) ? s.baseIncome : DEFAULTS.baseIncome;
+    s.otherOverseas = (typeof s.otherOverseas === 'number' && isFinite(s.otherOverseas)) ? s.otherOverseas : DEFAULTS.otherOverseas;
+    s.fx = (typeof s.fx === 'number' && isFinite(s.fx) && s.fx > 0) ? s.fx : DEFAULTS.fx;
+    if(!Array.isArray(s.dca)) s.dca = JSON.parse(JSON.stringify(DEFAULTS.dca));
+
+    function num(v, d){ var n = parseFloat(v); return isFinite(n) ? n : d; }
+
+    s.holdings = s.holdings.filter(function(h){ return h && typeof h === 'object' && h.code && h.g; }).map(function(h){
+      var clean = {
+        g: String(h.g), code: String(h.code), name: String(h.name || h.code),
+        qty: num(h.qty, 0), price: num(h.price, 0), cost: num(h.cost, 0), value: num(h.value, 0),
+        currency: (h.currency === 'USD') ? 'USD' : 'TWD',
+        distCcy: (h.distCcy === 'USD') ? 'USD' : 'TWD',
+        received: num(h.received, 0),
+        note: (typeof h.note === 'string') ? h.note : ''
+      };
+      clean.payments = Array.isArray(h.payments) ? h.payments.filter(function(p){
+        return p && typeof p === 'object';
+      }).map(function(p){
+        var t = (p.tax && typeof p.tax === 'object') ? p.tax : {};
+        return {
+          month: Math.min(12, Math.max(1, Math.round(num(p.month, 1)))),
+          amount: num(p.amount, 0),
+          confirmed: !!p.confirmed,
+          tax: { c54: num(t.c54,0), overseas: num(t.overseas,0), exempt: num(t.exempt,0) }
+        };
+      }) : [];
+      return clean;
+    });
+    return s;
+  }
+
+  function load(){
+    try{
+      var raw = localStorage.getItem(STORE_KEY);
+      if(raw){
+        var s = sanitizeState(JSON.parse(raw));
+        if(s.holdings.length) return s;
+      }
+    }catch(e){
+      try{ console.warn('存股戰情室：讀取到的本機資料格式跟目前版本不相容，已改用預設查證資料。', e); }catch(e2){}
+    }
+    return JSON.parse(JSON.stringify(DEFAULTS));
+  }
+  function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){} scheduleCloudSave(); }
+
+  function showResetNotice(){
+    var box = document.createElement('div');
+    box.style.cssText = 'max-width:1240px;margin:0 auto 16px;padding:12px 16px;border-radius:10px;background:var(--warn-soft);color:var(--warn);font-size:13px;line-height:1.6;';
+    box.innerHTML = '⚠️ 偵測到瀏覽器裡先前存的資料跟目前版本的工具對不上（可能是先前某次介面改版留下的舊格式），為了避免整頁打不開，已自動改用最新一次查證的預設資料重新載入。如果你之前在這台裝置上編輯過持股，需要重新輸入一次，造成不便請見諒。';
+    document.body.insertBefore(box, document.body.firstChild);
+  }
+
+  // Artifact 的 iframe sandbox 沒有給 allow-modals（實測sandbox屬性只有
+  // allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-popups），
+  // window.confirm()/alert() 在這種環境下會被瀏覽器靜默略過、直接回傳false，完全不會
+  // 跳出對話框——也就是說「刪除持股」跟「重設為預設資料」這兩個用confirm()把關的按鈕，
+  // 從這支工具第一天上線就從來沒有真的問過使用者，每次點擊都會被confirm()回傳false擋下、
+  // 直接return，使用者只會看到「按了完全沒反應」。改成自己畫一個簡單的確認彈窗，不依賴
+  // 瀏覽器原生對話框。
+  function showConfirm(message, onYes){
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    var box = document.createElement('div');
+    box.style.cssText = 'background:var(--surface);color:var(--ink);border-radius:12px;padding:20px 22px;max-width:420px;box-shadow:0 8px 30px rgba(0,0,0,.35);font-size:14px;line-height:1.6;';
+    box.innerHTML = '<div style="margin-bottom:16px;">'+esc(message)+'</div>' +
+      '<div style="display:flex;gap:10px;justify-content:flex-end;">' +
+      '<button id="cfNo" style="padding:7px 16px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);cursor:pointer;font:600 13px \'Noto Sans TC\';">取消</button>' +
+      '<button id="cfYes" style="padding:7px 16px;border-radius:8px;border:1px solid var(--danger);background:var(--danger);color:#fff;cursor:pointer;font:600 13px \'Noto Sans TC\';">確定</button>' +
+      '</div>';
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+    function cleanup(){ if(overlay.parentNode) document.body.removeChild(overlay); }
+    box.querySelector('#cfNo').addEventListener('click', cleanup);
+    box.querySelector('#cfYes').addEventListener('click', function(){ cleanup(); onYes(); });
+    overlay.addEventListener('click', function(e){ if(e.target===overlay) cleanup(); });
+  }
+
+  // 同樣理由（sandbox沒有allow-modals），window.alert()也一樣是靜默no-op，「新增持股」
+  // 表單缺欄位時原本想跳出的提醒訊息從來沒有真的顯示過，使用者只會看到按了新增沒反應。
+  function showAlert(message){
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    var box = document.createElement('div');
+    box.style.cssText = 'background:var(--surface);color:var(--ink);border-radius:12px;padding:20px 22px;max-width:380px;box-shadow:0 8px 30px rgba(0,0,0,.35);font-size:14px;line-height:1.6;';
+    box.innerHTML = '<div style="margin-bottom:16px;">'+esc(message)+'</div>' +
+      '<div style="display:flex;justify-content:flex-end;">' +
+      '<button id="alOk" style="padding:7px 18px;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer;font:600 13px \'Noto Sans TC\';">好</button>' +
+      '</div>';
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+    function cleanup(){ if(overlay.parentNode) document.body.removeChild(overlay); }
+    box.querySelector('#alOk').addEventListener('click', cleanup);
+    overlay.addEventListener('click', function(e){ if(e.target===overlay) cleanup(); });
+  }
+
+  function fx(){ return parseFloat(document.getElementById('fx').value) || 31.6; }
+  function toTWD(amount, ccy){ return ccy === 'USD' ? amount * fx() : amount; }
+
+  function fmtTWD(n){ var s = Math.round(Math.abs(n)).toLocaleString('en-US'); return (n < 0 ? '-' : '') + 'NT$' + s; }
+  function fmtUSD(n){ var s = Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); return (n < 0 ? '-' : '') + 'US$' + s; }
+  function fmtPct(n){ return (n >= 0 ? '+' : '') + n.toFixed(2) + '%'; }
+  function fmtNum(n, d){ return n.toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0}); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+  function annualDivTWD(h){
+    return (h.payments||[]).reduce(function(s,p){ return s + toTWD(p.amount*h.qty, h.distCcy); }, 0);
+  }
+  function valueTWD(h){ return toTWD(h.value, h.currency); }
+  function costTWD(h){ return toTWD(h.cost, h.currency); }
+  function findHolding(code,g){ return state.holdings.find(function(x){ return x.code===code && x.g===g; }); }
+
+  var GROUP_LABEL = {tw:'台股現股／ETF', us:'複委託美股', fund:'基金'};
+  var CAT_COLOR = {tw:'var(--cat-tw)', us:'var(--cat-us)', fund:'var(--cat-fund)'};
+  var activeGroup = 'tw';
+
+  // ================= 一、投資組合總覽（分類圓餅圖＋表） =================
+  function computeCategories(){
+    var cats = {tw:{value:0,cost:0,dca:0},us:{value:0,cost:0,dca:0},fund:{value:0,cost:0,dca:0}};
+    state.holdings.forEach(function(h){
+      cats[h.g].value += valueTWD(h);
+      cats[h.g].cost += costTWD(h);
+    });
+    state.dca.forEach(function(d){ cats[d.g].dca += toTWD(d.amount, d.ccy); });
+    var total = cats.tw.value + cats.us.value + cats.fund.value;
+    return {cats:cats, total:total};
+  }
+
+  // 圓環改用純 CSS conic-gradient（不用 SVG）——SVG 的 stroke="var(--cat-tw)" 這種presentation
+  // attribute 在部分瀏覽器/環境下不會套用 CSS 變數（來回實測過三輪，色塊永遠不出現），
+  // 但同樣的 CSS 變數用在一般元素的 background/color（例如下面表格的色塊）完全正常，
+  // 所以改成同一條「已驗證會動」的路徑：一個 div 的 background 設 conic-gradient。
+  function renderDonut(){
+    var data = computeCategories();
+    var ring = document.getElementById('donutRing');
+    var order = ['tw','us','fund'];
+    var cum = 0;
+    var stops = [];
+    var segRanges = [];
+    order.forEach(function(k){
+      var v = data.cats[k].value;
+      var pct = data.total > 0 ? (v/data.total*100) : 0;
+      var start = cum, end = cum + pct;
+      stops.push(CAT_COLOR[k] + ' ' + start.toFixed(3) + '% ' + end.toFixed(3) + '%');
+      segRanges.push({k:k, start:start, end:end});
+      cum = end;
+    });
+    if(cum < 99.999) stops.push('var(--surface-2) ' + cum.toFixed(3) + '% 100%');
+    ring.style.background = 'conic-gradient(' + stops.join(', ') + ')';
+
+    ring.onclick = function(e){
+      var rect = ring.getBoundingClientRect();
+      var cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
+      var dx = e.clientX - cx, dy = e.clientY - cy;
+      // conic-gradient 的 0 度基準在 12 點鐘方向、順時針計算，換算成標準 atan2 角度要用 atan2(dx, -dy)
+      var a = Math.atan2(dx, -dy) * 180/Math.PI;
+      if(a < 0) a += 360;
+      var hit = segRanges.find(function(r){ return a >= r.start && a < r.end; });
+      if(!hit) return;
+      activeCat = (activeCat === hit.k) ? null : hit.k;
+      renderDonut(); renderCatTable();
+    };
+    renderDonutCenter(data);
+  }
+
+  function renderDonutCenter(data){
+    // 中心文字是靜態 HTML 就有的固定容器（見上方 #donutCenter），這裡只換內容，
+    // 不做任何節點搬移／插入——避免先前那種手動排序 DOM 節點在極端情況下錯位、
+    // 造成畫面看起來像疊出第二個圓餅圖的問題。
+    var box = document.getElementById('donutCenter');
+    if(activeCat && data.cats[activeCat]){
+      var v = data.cats[activeCat].value;
+      var pct = data.total>0 ? (v/data.total*100) : 0;
+      box.innerHTML = '<div class="cv" style="color:'+CAT_COLOR[activeCat]+'">'+pct.toFixed(1)+'%</div><div class="cl">'+GROUP_LABEL[activeCat]+'<br>'+fmtTWD(v)+'</div>';
+    } else {
+      box.innerHTML = '<div class="cv">'+fmtTWD(data.total)+'</div><div class="cl">總市值（台幣）</div>';
+    }
+  }
+
+  function renderCatTable(){
+    var data = computeCategories();
+    var order = ['tw','us','fund'];
+    var head = '<thead><tr><th>分類</th><th class="num">市值(台幣)</th><th class="num">佔比</th><th class="num">成本(台幣)</th><th class="num">損益</th><th class="num">每月定期定額(台幣)</th></tr></thead>';
+    var body = order.map(function(k){
+      var c = data.cats[k];
+      var pct = data.total>0 ? c.value/data.total*100 : 0;
+      var pnl = c.value - c.cost, pnlCls = pnl>=0?'gain':'loss';
+      return '<tr class="catrow'+(activeCat===k?' active':'')+'" data-cat="'+k+'">'+
+        '<td class="catname"><span class="swatch" style="background:'+CAT_COLOR[k]+'"></span>'+GROUP_LABEL[k]+'</td>'+
+        '<td>'+fmtTWD(c.value)+'</td>'+
+        '<td>'+pct.toFixed(1)+'%</td>'+
+        '<td>'+fmtTWD(c.cost)+'</td>'+
+        '<td class="'+pnlCls+'">'+(pnl>=0?'+':'')+fmtTWD(pnl)+'</td>'+
+        '<td>'+fmtTWD(c.dca)+'</td></tr>';
+    }).join('');
+    var dcaTotal = order.reduce(function(s,k){return s+data.cats[k].dca;},0);
+    var pnlTotal = data.total - order.reduce(function(s,k){return s+data.cats[k].cost;},0);
+    var foot = '<tfoot><tr><td>合計</td><td>'+fmtTWD(data.total)+'</td><td>100%</td><td>'+fmtTWD(order.reduce(function(s,k){return s+data.cats[k].cost;},0))+'</td><td class="'+(pnlTotal>=0?'gain':'loss')+'">'+(pnlTotal>=0?'+':'')+fmtTWD(pnlTotal)+'</td><td>'+fmtTWD(dcaTotal)+'</td></tr></tfoot>';
+    document.getElementById('catTable').innerHTML = head+'<tbody>'+body+'</tbody>'+foot;
+    document.querySelectorAll('#catTable tr.catrow').forEach(function(tr){
+      tr.addEventListener('click', function(){
+        var k = tr.dataset.cat;
+        activeCat = (activeCat===k) ? null : k;
+        renderDonut(); renderCatTable();
+      });
+    });
+  }
+
+  // ================= 總覽 tiles（第二排：張數/損益/配息） =================
+  function renderTiles(){
+    var totalValue = 0, totalCost = 0, totalReceived = 0, totalAnnualDiv = 0, confirmedDiv = 0, forecastDiv = 0;
+    state.holdings.forEach(function(h){
+      totalValue += valueTWD(h);
+      totalCost += costTWD(h);
+      totalReceived += h.received;
+      (h.payments||[]).forEach(function(p){
+        var amt = toTWD(p.amount*h.qty, h.distCcy);
+        totalAnnualDiv += amt;
+        if(p.confirmed) confirmedDiv += amt; else forecastDiv += amt;
+      });
+    });
+    var pnl = totalValue - totalCost;
+    var pnlPct = totalCost ? (pnl/totalCost*100) : 0;
+    var avgMonthly = totalAnnualDiv/12;
+    var pnlClass = pnl >= 0 ? 'gain' : 'loss';
+    var totalLots = state.holdings.filter(function(h){return h.g==='tw';}).reduce(function(s,h){return s+h.qty;},0)/1000;
+
+    var tiles = [
+      {label:'台股總張數(不含零股)', value: fmtNum(totalLots,2) + ' 張', accent:true},
+      {label:'預估未實現損益', value: (pnl>=0?'+':'') + fmtTWD(pnl).replace('-',''), sub: fmtPct(pnlPct), cls:pnlClass},
+      {label:'目前累計已收配息', value: fmtTWD(totalReceived)},
+      {label:'今年配息：已公告金額', value: fmtTWD(confirmedDiv), accent:true},
+      {label:'今年配息：尚未公告(推估)', value: fmtTWD(forecastDiv)},
+      {label:'預估年配息總額', value: fmtTWD(totalAnnualDiv), accent:true},
+      {label:'預估平均每月領息', value: fmtTWD(avgMonthly), accent:true}
+    ];
+    document.getElementById('tiles').innerHTML = tiles.map(function(t){
+      return '<div class="tile'+(t.accent?' accent':'')+'"><div class="label">'+t.label+'</div>'+
+        '<div class="value'+(t.cls?' '+t.cls:'')+'">'+t.value+'</div>'+
+        (t.sub?'<div class="sub">'+t.sub+'</div>':'')+'</div>';
+    }).join('');
+  }
+
+  function inp(code, g, field, value, width){
+    return '<input class="cell" data-code="'+esc(code)+'" data-g="'+esc(g)+'" data-field="'+field+'" value="'+esc(value)+'" style="'+(width?'width:'+width+'px':'')+'">';
+  }
+
+  // ================= 二、持股明細表 =================
+  function renderHoldTable(){
+    var rows = state.holdings.filter(function(h){ return h.g === activeGroup; });
+    var isTW = activeGroup === 'tw';
+    var isUS = activeGroup === 'us';
+    var ccyLabel = isUS ? 'USD' : 'TWD';
+    var fmt = isUS ? fmtUSD : fmtTWD;
+    var COLS = isTW ? 13 : 12;
+
+    var head = '<thead><tr>' +
+      '<th></th><th>標的</th>' +
+      (isTW ? '<th class="num">股數</th><th class="num">張數</th>' : '<th class="num">股數/單位</th>') +
+      '<th class="num">市價('+ccyLabel+')</th>' +
+      '<th class="num">成本('+ccyLabel+')</th>' +
+      '<th class="num">現值('+ccyLabel+')</th>' +
+      '<th class="num">損益</th>' +
+      '<th class="num">今年配息(台幣)</th>' +
+      '<th class="num">已收配息(台幣)</th>' +
+      '<th></th>' +
+      '</tr></thead>';
+
+    var body = rows.map(function(h){
+      var val = valueTWD(h), cst = costTWD(h);
+      var pnl = val - cst, pct = cst ? pnl/cst*100 : 0;
+      var pnlCls = pnl >= 0 ? 'gain':'loss';
+      var lots = h.qty/1000;
+      var placeholder = (h.qty===0 && h.cost===0);
+      var isETF = !!CONSTITUENTS[h.code];
+      var rowKey = h.code+'-'+h.g;
+      var isOpen = !!expanded[rowKey];
+      var noteKey = 'note-'+rowKey;
+      var noteOpen = !!expanded[noteKey];
+      var ann = annualDivTWD(h);
+      var nConfirmed = (h.payments||[]).filter(function(p){return p.confirmed;}).length;
+      var nForecast = (h.payments||[]).length - nConfirmed;
+      var out = '<tr'+(placeholder?' class="placeholder"':'')+'>';
+      out += '<td><button class="rowbtn" data-toggle="'+esc(rowKey)+'" title="展開成分股/配息紀錄">'+(isOpen?'▾':'▸')+'</button></td>';
+      out += '<td><div class="name">'+(isETF?'🔍 ':'')+esc(h.name)+'</div><div class="code">'+esc(h.code)+'</div>'+
+        (h.note?'<span class="note'+(h.note.indexOf('⚠️')===0?' warn':'')+(noteOpen?'':' clamp')+'" data-notetoggle="'+esc(noteKey)+'">'+esc(h.note)+'</span>':'')+'</td>';
+      if(isTW){
+        out += '<td class="num">'+inp(h.code,h.g,'qty',h.qty,84)+'</td>';
+        out += '<td class="num">'+(lots>=1?fmtNum(lots,2)+' 張':'<span style="color:var(--muted)">零股</span>')+'</td>';
+      } else {
+        out += '<td class="num">'+inp(h.code,h.g,'qty',h.qty,84)+'</td>';
+      }
+      var lp = livePrices[priceKey(h)];
+      var priceCap = (lp && lp.asOf) ? '<span class="priceLive'+(isPriceStale(lp.asOf)?' stale':'')+'">'+(isPriceStale(lp.asOf)?'⚠️':'✓')+' '+esc(lp.asOf)+'</span>' : '';
+      out += '<td class="num">'+inp(h.code,h.g,'price',h.price,72)+priceCap+'</td>';
+      out += '<td class="num">'+inp(h.code,h.g,'cost',h.cost,104)+'</td>';
+      out += '<td class="num">'+inp(h.code,h.g,'value',h.value,104)+'</td>';
+      out += '<td class="num '+pnlCls+'">'+(pnl>=0?'+':'')+fmt(pnl)+'<br><span style="font-size:11px">'+fmtPct(pct)+'</span></td>';
+      out += '<td class="num">'+fmtTWD(ann)+(h.payments.length?'<br><span class="tag confirmed">'+nConfirmed+'筆已確定</span> '+(nForecast?'<span class="tag forecast">'+nForecast+'筆推估</span>':''):'')+'</td>';
+      out += '<td class="num">'+inp(h.code,h.g,'received',h.received,70)+'</td>';
+      out += '<td><button class="rowbtn del" data-del="'+esc(h.code)+'" data-delg="'+esc(h.g)+'" title="刪除這筆持股">×</button></td>';
+      out += '</tr>';
+      if(isOpen){
+        out += '<tr class="sub-row"><td colspan="'+COLS+'"><div class="subdetail">' + renderSubdetail(h, isETF) + '</div></td></tr>';
+      }
+      return out;
+    }).join('');
+
+    var addbar = '<tr><td colspan="'+COLS+'"><div class="addbar">' +
+      '<input class="code" id="newCode" placeholder="代號 (例如 2330)">' +
+      '<input class="name" id="newName" placeholder="名稱 (例如 台積電)">' +
+      '<button id="addRowBtn">＋ 新增這筆持股</button>' +
+      '<span class="hint2">新增後預設張數/成本/配息皆為0，加進「'+GROUP_LABEL[activeGroup]+'」分類，之後可直接在表格內編輯，展開列可新增配息紀錄</span>' +
+      '</div></td></tr>';
+
+    document.getElementById('holdTable').innerHTML = head + '<tbody>' + body + addbar + '</tbody>';
+  }
+
+  function renderSubdetail(h, isETF){
+    var html = '';
+    if(isETF){
+      var c = CONSTITUENTS[h.code];
+      var ctRows = c.map(function(it,i){
+        return '<tr><td class="num">'+(i+1)+'</td><td>'+esc(it.name)+'</td><td class="code">'+esc(it.code)+'</td><td class="num">'+it.weight.toFixed(2)+'%</td></tr>';
+      }).join('');
+      html += '<div><h4>成分股（前10大，佔淨值比重）</h4><table><thead><tr><th>#</th><th>成分股</th><th>代號</th><th class="num">比重</th></tr></thead><tbody>'+ctRows+'</tbody></table></div>';
+    }
+    var payRows = (h.payments||[]).slice().sort(function(a,b){return a.month-b.month;}).map(function(p,idx){
+      var realIdx = h.payments.indexOf(p);
+      var monthOpts = [];
+      for(var m=1;m<=12;m++){ monthOpts.push('<option value="'+m+'"'+(m===p.month?' selected':'')+'>'+m+'月</option>'); }
+      return '<tr>' +
+        '<td><select class="payMonthSel" data-pcode="'+esc(h.code)+'" data-pg="'+esc(h.g)+'" data-pidx="'+realIdx+'" data-pfield="month">'+monthOpts.join('')+'</select></td>' +
+        '<td class="num"><input class="cell paycell" data-pcode="'+esc(h.code)+'" data-pg="'+esc(h.g)+'" data-pidx="'+realIdx+'" data-pfield="amount" value="'+p.amount+'"></td>' +
+        '<td style="text-align:center"><input type="checkbox" class="payChk" data-pcode="'+esc(h.code)+'" data-pg="'+esc(h.g)+'" data-pidx="'+realIdx+'" data-pfield="confirmed" '+(p.confirmed?'checked':'')+'></td>' +
+        '<td class="num"><input class="cell paycell" data-pcode="'+esc(h.code)+'" data-pg="'+esc(h.g)+'" data-pidx="'+realIdx+'" data-pfield="c54" value="'+p.tax.c54+'"></td>' +
+        '<td class="num"><input class="cell paycell" data-pcode="'+esc(h.code)+'" data-pg="'+esc(h.g)+'" data-pidx="'+realIdx+'" data-pfield="overseas" value="'+p.tax.overseas+'"></td>' +
+        '<td class="num"><input class="cell paycell" data-pcode="'+esc(h.code)+'" data-pg="'+esc(h.g)+'" data-pidx="'+realIdx+'" data-pfield="exempt" value="'+p.tax.exempt+'"></td>' +
+        '<td class="num">'+fmtTWD(toTWD(p.amount*h.qty,h.distCcy))+'</td>' +
+        '<td><button class="rowbtn small del" data-pdel="'+esc(h.code)+'" data-pdelg="'+esc(h.g)+'" data-pdelidx="'+realIdx+'">×</button></td>' +
+      '</tr>';
+    }).join('');
+    html += '<div><h4>逐筆配息紀錄（月份／每股或單位金額／是否已公告／稅務組成%）</h4>' +
+      '<table><thead><tr><th>月份</th><th class="num">金額</th><th>已公告</th><th class="num">54C%</th><th class="num">海外%</th><th class="num">免稅%</th><th class="num">換算台幣</th><th></th></tr></thead>' +
+      '<tbody>'+(payRows||'<tr><td colspan="8" style="color:var(--muted)">尚無配息紀錄</td></tr>')+'</tbody></table>' +
+      '<div style="margin-top:8px"><button class="rowbtn" style="width:auto;padding:4px 10px" data-addpay="'+esc(h.code)+'" data-addpayg="'+esc(h.g)+'">＋ 新增一筆配息紀錄</button></div>' +
+      '</div>';
+    return html;
+  }
+
+  // 一次性事件委派：#holdTable 這個容器元素本身從不被替換（只有 innerHTML 內容會被整段換掉），
+  // 把 click／change 監聽器掛在容器上，不論裡面的按鈕/輸入框重繪幾次都能持續生效，
+  // 避免「每次 renderHoldTable() 都要重新逐一綁定」時漏綁或綁定時機錯誤的問題。
+  function initHoldTableDelegation(){
+    var wrap = document.getElementById('holdTable');
+
+    wrap.addEventListener('click', function(e){
+      var toggleBtn = e.target.closest('button[data-toggle]');
+      if(toggleBtn){ var k = toggleBtn.dataset.toggle; expanded[k] = !expanded[k]; renderHoldTable(); return; }
+
+      var noteEl = e.target.closest('[data-notetoggle]');
+      if(noteEl){ var nk = noteEl.dataset.notetoggle; expanded[nk] = !expanded[nk]; renderHoldTable(); return; }
+
+      var delBtn = e.target.closest('button[data-del]');
+      if(delBtn){
+        var code = delBtn.dataset.del, g = delBtn.dataset.delg;
+        var h = findHolding(code,g); if(!h) return;
+        showConfirm('確定要刪除「'+h.name+'（'+h.code+'）」這筆持股嗎？此動作無法復原（可用「重設為預設庫存資料」還原查證資料，但你自己新增/修改過的其他持股也會一起被還原）。', function(){
+          state.holdings = state.holdings.filter(function(x){ return !(x.code===code && x.g===g); });
+          save(); renderAll();
+        });
+        return;
+      }
+
+      var addBtn = e.target.closest('#addRowBtn');
+      if(addBtn){
+        var codeEl = document.getElementById('newCode'), nameEl = document.getElementById('newName');
+        var ncode = (codeEl.value||'').trim(), nname = (nameEl.value||'').trim();
+        if(!ncode || !nname){ showAlert('代號跟名稱都要填喔'); return; }
+        if(state.holdings.some(function(x){return x.code===ncode && x.g===activeGroup;})){ showAlert('這個分類底下已經有相同代號了，換一個代號或直接編輯既有那筆'); return; }
+        var ccy = activeGroup === 'us' ? 'USD' : 'TWD';
+        state.holdings.push({g:activeGroup, code:ncode, name:nname, qty:0, price:0, cost:0, value:0, currency:ccy, distCcy:ccy, payments:[], received:0, note:'手動新增，請自行填入張數/成本/市價，展開列可新增配息紀錄'});
+        save(); renderAll(); return;
+      }
+
+      var pdelBtn = e.target.closest('[data-pdel]');
+      if(pdelBtn){
+        var h2 = findHolding(pdelBtn.dataset.pdel, pdelBtn.dataset.pdelg); if(!h2) return;
+        h2.payments.splice(parseInt(pdelBtn.dataset.pdelidx,10),1);
+        save(); renderAll(); return;
+      }
+
+      var addPayBtn = e.target.closest('[data-addpay]');
+      if(addPayBtn){
+        var h3 = findHolding(addPayBtn.dataset.addpay, addPayBtn.dataset.addpayg); if(!h3) return;
+        h3.payments.push({month:1, amount:0, confirmed:false, tax:{c54:100,overseas:0,exempt:0}});
+        expanded[h3.code+'-'+h3.g] = true;
+        save(); renderAll(); return;
+      }
+    });
+
+    wrap.addEventListener('change', function(e){
+      var el = e.target;
+      if(el.matches('input.cell[data-field]')){ onCellChange(el); return; }
+      if(el.matches('[data-pcode]')){
+        var h = findHolding(el.dataset.pcode, el.dataset.pg); if(!h) return;
+        var p = h.payments[parseInt(el.dataset.pidx,10)]; if(!p) return;
+        var field = el.dataset.pfield;
+        if(field === 'month'){ p.month = parseInt(el.value,10); }
+        else if(field === 'confirmed'){ p.confirmed = el.checked; }
+        else if(field === 'c54' || field === 'overseas' || field === 'exempt'){ var v=parseFloat(el.value); p.tax[field] = isNaN(v)?0:v; }
+        else { var v2 = parseFloat(el.value); p.amount = isNaN(v2)?0:v2; }
+        save(); renderAll();
+      }
+    });
+  }
+
+  function onCellChange(el){
+    var code = el.dataset.code, g = el.dataset.g, field = el.dataset.field;
+    var h = findHolding(code, g); if(!h) return;
+    var v = parseFloat(el.value);
+    h[field] = isNaN(v) ? 0 : v;
+    save(); renderAll();
+  }
+
+  // ================= 三、全曝險穿透分析（直接持有＋透過ETF/基金間接持有，合併統計） =================
+  function getUnderlyingDict(){
+    var merged = {};
+    Object.keys(CONSTITUENTS).forEach(function(k){ merged[k] = CONSTITUENTS[k]; });
+    Object.keys(FUND_HOLDINGS).forEach(function(k){ merged[k] = FUND_HOLDINGS[k]; });
+    return merged;
+  }
+
+  function computeExposure(){
+    var wrappers = getUnderlyingDict();
+    var entries = {};
+    var totalPortfolio = 0;
+    state.holdings.forEach(function(h){ totalPortfolio += valueTWD(h); });
+
+    state.holdings.forEach(function(h){
+      var v = valueTWD(h);
+      if(v <= 0) return;
+      if(wrappers[h.code]){
+        wrappers[h.code].forEach(function(c){
+          if(!entries[c.code]) entries[c.code] = {name:c.name, code:c.code, direct:0, indirect:0, from:[]};
+          entries[c.code].indirect += v * (c.weight/100);
+          if(entries[c.code].from.indexOf(h.name+'('+h.code+')') === -1) entries[c.code].from.push(h.name+'('+h.code+')');
+        });
+      } else {
+        if(!entries[h.code]) entries[h.code] = {name:h.name, code:h.code, direct:0, indirect:0, from:[]};
+        entries[h.code].direct += v;
+      }
+    });
+
+    var list = Object.keys(entries).map(function(k){
+      var e = entries[k];
+      e.total = e.direct + e.indirect;
+      return e;
+    }).sort(function(a,b){ return b.total - a.total; });
+
+    return {list:list, totalPortfolio:totalPortfolio};
+  }
+
+  // 簡化版 squarified treemap（Bruls/Huizing/van Wijk 演算法）：把 items 依 total 值鋪滿 x,y,w,h 這塊虛擬座標區域
+  function squarify(items, x, y, w, h, out){
+    if(!items.length) return;
+    if(w<=0 || h<=0) return;
+    var total = items.reduce(function(s,d){return s+d.total;},0);
+    if(total<=0) return;
+    var areaScale = (w*h)/total;
+    var shortSide = Math.min(w,h);
+    function worst(row){
+      var sum=row.reduce(function(s,d){return s+d.total;},0);
+      var maxV=Math.max.apply(null,row.map(function(d){return d.total;}));
+      var minV=Math.min.apply(null,row.map(function(d){return d.total;}));
+      var sumA=sum*areaScale, maxA=maxV*areaScale, minA=minV*areaScale;
+      if(minA<=0) return Infinity;
+      return Math.max((shortSide*shortSide*maxA)/(sumA*sumA), (sumA*sumA)/(shortSide*shortSide*minA));
+    }
+    var row = [items[0]], i = 1;
+    while(i < items.length){
+      var testRow = row.concat([items[i]]);
+      if(worst(testRow) <= worst(row)){ row = testRow; i++; } else break;
+    }
+    var rowTotal = row.reduce(function(s,d){return s+d.total;},0);
+    var rowArea = rowTotal*areaScale;
+    if(w >= h){
+      var rowW = rowArea/h, cy=y;
+      row.forEach(function(d){ var ch=(d.total*areaScale)/rowW; out.push({item:d,x:x,y:cy,w:rowW,h:ch}); cy+=ch; });
+      squarify(items.slice(row.length), x+rowW, y, w-rowW, h, out);
+    } else {
+      var rowH = rowArea/w, cx=x;
+      row.forEach(function(d){ var cw=(d.total*areaScale)/rowH; out.push({item:d,x:cx,y:y,w:cw,h:rowH}); cx+=cw; });
+      squarify(items.slice(row.length), x, y+rowH, w, h-rowH, out);
+    }
+  }
+
+  var tmActiveKey = null;
+
+  function renderTreemap(){
+    var data = computeExposure();
+    var el = document.getElementById('treemap');
+    if(data.totalPortfolio <= 0){ el.innerHTML = ''; return; }
+    var top = data.list.filter(function(e){ return e.total > 0; }).slice(0, 24);
+    var VW = 1000, VH = 500;
+    var rects = [];
+    squarify(top, 0, 0, VW, VH, rects);
+    var html = rects.map(function(r,i){
+      var e = r.item;
+      var pct = e.total/data.totalPortfolio*100;
+      var hue = (i*47) % 360;
+      var color = 'hsl('+hue+' 42% 40%)';
+      var directPct = e.total>0 ? (e.direct/e.total*100) : 0;
+      var showLabel = (r.w/VW*100) > 4 && (r.h/VH*100) > 7;
+      var tipText = e.name+' 合計曝險 '+fmtTWD(e.total)+'（佔投資組合'+pct.toFixed(2)+'%，直接持有'+fmtTWD(e.direct)+'／間接持有'+fmtTWD(e.indirect)+'）';
+      return '<div class="tmcell'+(tmActiveKey===e.code?' active':'')+'" data-tmkey="'+esc(e.code)+'" title="'+esc(tipText)+'" style="left:'+(r.x/VW*100).toFixed(2)+'%;top:'+(r.y/VH*100).toFixed(2)+'%;width:'+(r.w/VW*100).toFixed(2)+'%;height:'+(r.h/VH*100).toFixed(2)+'%;--tmcolor:'+color+'">' +
+        '<div class="tm-direct" style="height:'+directPct.toFixed(1)+'%"></div>' +
+        '<div class="tm-indirect"></div>' +
+        (showLabel ? '<div class="tm-label">'+esc(e.name)+'<br><span class="tm-val">'+pct.toFixed(1)+'%</span></div>' : '') +
+      '</div>';
+    }).join('');
+    el.innerHTML = html + '<div class="tmLegend"><span><i></i>直接持有</span><span><i class="ind"></i>透過ETF/基金間接持有</span><span>矩形大小＝合計曝險金額，點矩形看明細</span></div>' +
+      '<div class="tmDetail" id="tmDetail"></div>';
+    document.querySelectorAll('#treemap .tmcell').forEach(function(cell){
+      cell.addEventListener('click', function(){
+        var key = cell.dataset.tmkey;
+        tmActiveKey = (tmActiveKey===key) ? null : key;
+        renderTreemap();
+      });
+    });
+    renderTmDetail(data);
+  }
+
+  function renderTmDetail(data){
+    var box = document.getElementById('tmDetail');
+    if(!box) return;
+    if(!tmActiveKey){ box.classList.remove('show'); box.innerHTML=''; return; }
+    var e = data.list.find(function(x){ return x.code===tmActiveKey; });
+    if(!e){ box.classList.remove('show'); return; }
+    var pct = e.total/data.totalPortfolio*100;
+    box.classList.add('show');
+    box.innerHTML = '<b>'+esc(e.name)+'（'+esc(e.code)+'）合計曝險 '+fmtTWD(e.total)+'，佔投資組合總市值 '+pct.toFixed(2)+'%</b><br>' +
+      '直接持有：'+fmtTWD(e.direct)+(e.direct>0?'（你帳戶裡直接持有這檔）':'（未直接持有）')+'<br>' +
+      '間接持有：'+fmtTWD(e.indirect)+(e.from.length?'，來自：'+e.from.join('、'):'');
+  }
+
+  function renderOverlap(){
+    var data = computeExposure();
+    var top = data.list.filter(function(e){return e.total>0;}).slice(0, 20);
+    if(!top.length){
+      document.getElementById('overlapTable').innerHTML = '<tbody><tr><td style="padding:16px;color:var(--muted);">目前沒有任何曝險資料可統計。</td></tr></tbody>';
+      return;
+    }
+    var head = '<thead><tr><th>標的</th><th>代號</th><th class="num">直接持有(台幣)</th><th class="num">間接持有(台幣)</th><th class="num">合計曝險</th><th class="num">佔投資組合%</th><th>間接來源</th></tr></thead>';
+    var body = top.map(function(e){
+      var pct = e.total/data.totalPortfolio*100;
+      return '<tr><td>'+esc(e.name)+'</td><td class="code">'+esc(e.code)+'</td><td class="num">'+(e.direct>0?fmtTWD(e.direct):'—')+'</td><td class="num">'+(e.indirect>0?fmtTWD(e.indirect):'—')+'</td><td class="num" style="font-weight:600">'+fmtTWD(e.total)+'</td><td class="num">'+pct.toFixed(2)+'%</td><td style="white-space:normal">'+(e.from.join('、')||'—')+'</td></tr>';
+    }).join('');
+    var foot = '<tfoot><tr><td colspan="4">投資組合總市值</td><td class="num">'+fmtTWD(data.totalPortfolio)+'</td><td colspan="2"></td></tr></tfoot>';
+    document.getElementById('overlapTable').innerHTML = head + '<tbody>' + body + '</tbody>' + foot;
+  }
+
+  // ================= 四、持倉集中度與安全性 =================
+  var SPECULATIVE = ['1526','7427','6973','7731'];
+
+  function computeConcentration(){
+    var totalAll = 0, us = 0, spec = 0, top = null;
+    state.holdings.forEach(function(h){
+      var v = valueTWD(h);
+      totalAll += v;
+      if(h.g==='us') us += v;
+      if(SPECULATIVE.indexOf(h.code) !== -1) spec += v;
+      if(!top || v > top.v) top = {name:h.name, code:h.code, v:v};
+    });
+    var exp = computeExposure();
+    var topConst = exp.list.length ? exp.list[0] : null;
+    return {totalAll:totalAll, us:us, spec:spec, top:top, exp:exp, topConst:topConst};
+  }
+
+  function renderConcentration(){
+    var c = computeConcentration();
+    var total = c.totalAll || 1;
+    var topPct = c.top ? c.top.v/total*100 : 0;
+    var specPct = c.spec/total*100;
+    var usPct = c.us/total*100;
+    var topConstPct = (c.topConst && c.exp.totalPortfolio>0) ? c.topConst.total/c.exp.totalPortfolio*100 : 0;
+
+    document.getElementById('riskTiles').innerHTML = [
+      {label:'最大單一持股佔比', value: (c.top?esc(c.top.name):'—')+' '+topPct.toFixed(1)+'%', cls: topPct>=25?'warn':''},
+      {label:'虧損/無配息個股佔總市值', value: specPct.toFixed(1)+'%', cls: specPct>=20?'warn':''},
+      {label:'美元資產佔總市值', value: usPct.toFixed(1)+'%'},
+      {label:'單一公司合計曝險最大(直接+間接)', value: (c.topConst?esc(c.topConst.name):'—')+' '+topConstPct.toFixed(1)+'%', cls: topConstPct>=25?'warn':''}
+    ].map(function(t){
+      return '<div class="tile"><div class="label">'+t.label+'</div><div class="value'+(t.cls?' '+t.cls:'')+'">'+t.value+'</div></div>';
+    }).join('');
+
+    var bullets = [];
+    if(topPct >= 25){
+      bullets.push('<li><b class="hi">單一持股集中度偏高：</b>「'+esc(c.top.name)+'」一檔就佔總市值 '+topPct.toFixed(1)+'%。這檔目前雖然帳面獲利可觀，但漲多之後波動也會放大到影響整體資產曲線，任何單一個股的利空都會直接反映在整體淨值上，跟「分散在10幾檔ETF/個股」的組合風險完全不同等級。</li>');
+    }
+    if(specPct >= 15){
+      bullets.push('<li><b class="'+(specPct>=30?'bad':'hi')+'">投機性個股佔比'+(specPct>=30?'偏高':'不低')+'：</b>華上生醫、永立榮、火星生技、日馳這幾檔目前<b>皆無穩定配息</b>（前兩者更是明確虧損/暫停配息），合計佔總市值約 '+specPct.toFixed(1)+'%。這部分是「賭轉機/賭獲利」的資本利得倉位，不是存股領息的部位——建議心裡把這塊獨立看成一個高風險子帳戶，設好停利/停損的想法，不要跟配息現金流部位混著算安全邊際。</li>');
+    }
+    if(topConstPct >= 20){
+      bullets.push('<li><b class="hi">單一公司合計曝險集中：</b>把你直接持有的個股，加上透過所有ETF／基金依市值加權往下拆到底層後，「'+esc(c.topConst.name)+'」一家公司的合計曝險就佔你投資組合總市值的 '+topConstPct.toFixed(1)+'%。買多檔ETF/基金常見的誤解是「已經分散了」，但只要底層都重壓同一批權值股（尤其台積電），實際集中度會比看起來的高很多，詳見上方「全曝險穿透分析」樹狀圖。</li>');
+    }
+    if(usPct < 5){
+      bullets.push('<li><b>幣別/地區集中度：</b>美元資產僅佔總市值約 '+usPct.toFixed(1)+'%，其餘幾乎全押在台灣市場。若擔心單一市場/單一貨幣風險，複委託美股與海外基金的比重可以再拉高一些做地區分散。</li>');
+    }
+    if(!bullets.length){ bullets.push('<li>目前計算出來的集中度指標都在一般認為的合理範圍內，沒有偵測到單一持股、投機倉位或ETF底層曝險過度集中的訊號。</li>'); }
+    document.getElementById('riskCallout').innerHTML =
+      '<div><b>這是根據目前市值結構自動生成的提示，不是投資建議</b>——僅描述「集中在哪裡」的事實，買賣決策仍要你自己判斷：</div><ul>'+bullets.join('')+'</ul>';
+  }
+
+  // ================= 五、稅務試算（逐筆） =================
+  var BRACKETS = [
+    {upTo:590000, rate:0.05, deduct:0}, {upTo:1330000, rate:0.12, deduct:41300},
+    {upTo:2660000, rate:0.20, deduct:147700}, {upTo:4980000, rate:0.30, deduct:413700},
+    {upTo:11170000, rate:0.40, deduct:911700}, {upTo:Infinity, rate:0.45, deduct:1469850}
+  ];
+  function bracketAt(x){ for(var i=0;i<BRACKETS.length;i++){ if(x <= BRACKETS[i].upTo) return BRACKETS[i]; } return BRACKETS[BRACKETS.length-1]; }
+  function taxAt(x){ if(x<=0) return 0; var b = bracketAt(x); return x*b.rate - b.deduct; }
+  function incrementalTax(base, amt){ return Math.max(0, taxAt(base+amt) - taxAt(base)); }
+
+  function computeTax(){
+    var totalC54 = 0, totalOverseas = 0, totalExempt = 0, nhi = 0;
+    var rows = [];
+    state.holdings.forEach(function(h){
+      (h.payments||[]).forEach(function(p){
+        var amt = toTWD(p.amount*h.qty, h.distCcy);
+        if(amt <= 0) return;
+        var c54Amt = amt*(p.tax.c54/100), overAmt = amt*(p.tax.overseas/100), exemptAmt = amt*(p.tax.exempt/100);
+        totalC54 += c54Amt; totalOverseas += overAmt; totalExempt += exemptAmt;
+        if(c54Amt >= 20000){ nhi += c54Amt * 0.0211; }
+        rows.push({h:h, p:p, amt:amt, c54Amt:c54Amt, overAmt:overAmt, exemptAmt:exemptAmt});
+      });
+    });
+    var baseIncome = state.baseIncome || 0;
+    var otherOverseas = state.otherOverseas || 0;
+    var combinedOverseas = totalOverseas + otherOverseas;
+    var mergedExtra = Math.max(0, incrementalTax(baseIncome, totalC54) - Math.min(totalC54*0.085, 80000));
+    var separateExtra = totalC54 * 0.28;
+    var marginalBracket = bracketAt(baseIncome + totalC54);
+    return {rows:rows, totalC54:totalC54, totalOverseas:totalOverseas, totalExempt:totalExempt, nhi:nhi,
+      baseIncome:baseIncome, otherOverseas:otherOverseas, combinedOverseas:combinedOverseas,
+      mergedExtra:mergedExtra, separateExtra:separateExtra, marginalBracket:marginalBracket};
+  }
+
+  function renderTaxCtrl(){
+    document.getElementById('taxCtrl').innerHTML =
+      '<div class="field"><label>綜合所得淨額（不含本組合股利，已含蘿荔+薇蔻企業社試算）</label><input id="baseIncomeInp" type="number" step="1000" value="'+state.baseIncome+'"></div>' +
+      '<div class="field"><label>其他海外所得（選填，本組合以外，用於判斷100萬門檻）</label><input id="otherOverseasInp" type="number" step="1000" value="'+state.otherOverseas+'"></div>' +
+      '<div class="field"><span class="bracket" id="bracketLabel"></span></div>';
+    document.getElementById('baseIncomeInp').addEventListener('change', function(){ state.baseIncome = parseFloat(this.value)||0; save(); renderTax(); });
+    document.getElementById('otherOverseasInp').addEventListener('change', function(){ state.otherOverseas = parseFloat(this.value)||0; save(); renderTax(); });
+  }
+
+  function renderTax(){
+    var tx = computeTax();
+    document.getElementById('bracketLabel').textContent = '目前級距 '+(tx.marginalBracket.rate*100)+'%（含本組合54C股利後的邊際稅率參考）';
+
+    var head = '<thead><tr><th>標的</th><th>月份</th><th>狀態</th><th class="num">換算台幣</th><th class="num">54C%</th><th class="num">海外%</th><th class="num">免稅%</th><th class="num">應稅54C金額</th></tr></thead>';
+    var body = tx.rows.sort(function(a,b){ return a.p.month-b.p.month; }).map(function(r){
+      return '<tr><td><div class="name">'+esc(r.h.name)+'</div><div class="code">'+esc(r.h.code)+'</div></td>'+
+        '<td class="num">'+r.p.month+'月</td>'+
+        '<td>'+(r.p.confirmed?'<span class="tag confirmed">已公告</span>':'<span class="tag forecast">推估</span>')+'</td>'+
+        '<td class="num">'+fmtTWD(r.amt)+'</td>'+
+        '<td class="num">'+r.p.tax.c54+'%</td><td class="num">'+r.p.tax.overseas+'%</td><td class="num">'+r.p.tax.exempt+'%</td>'+
+        '<td class="num">'+fmtTWD(r.c54Amt)+'</td></tr>';
+    }).join('');
+    var foot = '<tfoot><tr><td colspan="3">合計</td><td class="num">'+fmtTWD(tx.rows.reduce(function(s,r){return s+r.amt;},0))+'</td><td colspan="3"></td><td class="num">'+fmtTWD(tx.totalC54)+'</td></tr></tfoot>';
+    document.getElementById('taxTable').innerHTML = head + '<tbody>' + (body||'<tr><td colspan="8" style="color:var(--muted)">目前沒有任何配息紀錄</td></tr>') + '</tbody>' + foot;
+
+    var reco = tx.mergedExtra <= tx.separateExtra ? 'merge' : 'sep';
+    var cards = [
+      {label:'54C應稅股利所得合計', value: fmtTWD(tx.totalC54)},
+      {label:'海外所得合計（本組合）', value: fmtTWD(tx.totalOverseas), sub: '併其他海外所得後 '+fmtTWD(tx.combinedOverseas)+'／門檻NT$1,000,000'},
+      {label:'免稅(76W資本利得/收益平準金)合計', value: fmtTWD(tx.totalExempt)},
+      {label:'二代健保補充保費預估', value: fmtTWD(tx.nhi), sub:'單筆應稅配息≥2萬才會被扣，僅計國內54C部分'},
+      {label:'合併計稅：預估增加稅額', value: fmtTWD(tx.mergedExtra), sub:'已扣減8.5%抵減稅額(上限8萬)', reco: reco==='merge'},
+      {label:'28%分開計稅：預估增加稅額', value: fmtTWD(tx.separateExtra), reco: reco==='sep'}
+    ];
+    document.getElementById('taxResult').innerHTML = cards.map(function(c){
+      return '<div class="taxcard'+(c.reco?' reco':'')+'"><div class="t-label">'+c.label+(c.reco?'　✅建議':'')+'</div><div class="t-value">'+c.value+'</div>'+(c.sub?'<div class="t-sub">'+c.sub+'</div>':'')+'</div>';
+    }).join('') +
+    '<div class="callout" style="grid-column:1/-1">' +
+      '<div><b>依台灣現行所得稅制分類：</b>54C國內股利所得要併入綜合所得稅（可選合併計稅或28%分開計稅）；76財產交易所得(ETF已實現價差)與收益平準金都<b>不計入</b>一般綜所稅；73/71海外所得<b>不併入</b>一般綜所稅，但要注意基本所得額(最低稅負制)門檻——全年海外所得合計未達100萬可不計入，達100萬以上須整筆計入基本所得額另外精算。</div>' +
+      '<div><b>怎麼算的：</b>逐筆讀取上面「持股明細」展開列裡每一筆配息紀錄的金額與稅務組成%，54C部分加總後併入你目前的綜合所得淨額，用累進稅率算出增加的稅額，再扣掉8.5%可抵減稅額（每戶上限8萬）；28%分開計稅則是這筆金額直接乘以28%。已公告(confirmed)的用實際金額，尚未公告的用推估金額，兩者都會被計入試算，你可以在上面持股展開列直接修改每一筆的月份/金額/是否已公告/稅務組成%。</div>' +
+    '</div>';
+  }
+
+  // ================= 六、配息月曆 =================
+  var MONTH_LABEL = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+
+  function computeMonthly(){
+    var totals = new Array(12).fill(0);
+    var totalsConfirmed = new Array(12).fill(0);
+    var perHolding = state.holdings.map(function(h){
+      var arr = new Array(12).fill(0);
+      var any = false;
+      (h.payments||[]).forEach(function(p){
+        var amt = toTWD(p.amount*h.qty, h.distCcy);
+        arr[p.month-1] += amt; totals[p.month-1] += amt;
+        if(p.confirmed) totalsConfirmed[p.month-1] += amt;
+        if(amt>0) any = true;
+      });
+      return {h:h, arr:arr, total: arr.reduce(function(a,b){return a+b;},0), any:any};
+    });
+    return {perHolding:perHolding, totals:totals, totalsConfirmed:totalsConfirmed};
+  }
+
+  function renderCalendar(){
+    var data = computeMonthly();
+    var head = '<thead><tr><th>標的</th>' + MONTH_LABEL.map(function(m){return '<th class="num">'+m+'</th>';}).join('') + '<th class="num">全年合計</th></tr></thead>';
+    var body = data.perHolding.filter(function(r){ return r.any; }).map(function(r){
+      var tr = '<tr><td><div class="name">'+esc(r.h.name)+'</div><div class="code">'+esc(r.h.code)+'</div></td>';
+      tr += r.arr.map(function(v){ return '<td class="num">'+(v>0?fmtTWD(v):'<span style="color:var(--line)">—</span>')+'</td>'; }).join('');
+      tr += '<td class="num" style="font-weight:600">'+fmtTWD(r.total)+'</td></tr>';
+      return tr;
+    }).join('');
+    var footTotal = data.totals.reduce(function(a,b){return a+b;},0);
+    var foot = '<tfoot><tr><td>月合計</td>' + data.totals.map(function(v){return '<td class="num">'+fmtTWD(v)+'</td>';}).join('') + '<td class="num">'+fmtTWD(footTotal)+'</td></tr></tfoot>';
+    document.getElementById('calTable').innerHTML = head + '<tbody>' + body + '</tbody>' + foot;
+    drawChart(data.totals, data.totalsConfirmed);
+  }
+
+  function drawChart(totals, confirmed){
+    var svg = document.getElementById('calChart');
+    var W = 900, H = 220, padL = 46, padB = 26, padT = 14, padR = 10;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    var max = Math.max.apply(null, totals.concat([1]));
+    var barGap = 10;
+    var barW = (plotW - barGap*(totals.length-1)) / totals.length;
+    var parts = [];
+    parts.push('<line class="zeroline" x1="'+padL+'" y1="'+(padT+plotH)+'" x2="'+(padL+plotW)+'" y2="'+(padT+plotH)+'" stroke-width="1"/>');
+    totals.forEach(function(v,i){
+      var h = max>0 ? (v/max)*plotH : 0;
+      var hc = max>0 ? (confirmed[i]/max)*plotH : 0;
+      var x = padL + i*(barW+barGap);
+      var y = padT + plotH - h;
+      var yc = padT + plotH - hc;
+      if(v > confirmed[i]){
+        parts.push('<rect class="bar forecast" x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+barW.toFixed(1)+'" height="'+Math.max(h,1).toFixed(1)+'" rx="3"><title>'+MONTH_LABEL[i]+' 合計(含推估) '+fmtTWD(v)+'</title></rect>');
+      }
+      if(confirmed[i] > 0){
+        parts.push('<rect class="bar" x="'+x.toFixed(1)+'" y="'+yc.toFixed(1)+'" width="'+barW.toFixed(1)+'" height="'+Math.max(hc,1).toFixed(1)+'" rx="3"><title>'+MONTH_LABEL[i]+' 已公告 '+fmtTWD(confirmed[i])+'</title></rect>');
+      }
+      if(v>0){ parts.push('<text class="barlabel" x="'+(x+barW/2).toFixed(1)+'" y="'+(y-6).toFixed(1)+'" font-size="10.5" text-anchor="middle">'+Math.round(v/1000)+'k</text>'); }
+      parts.push('<text x="'+(x+barW/2).toFixed(1)+'" y="'+(H-8)+'" font-size="11" text-anchor="middle">'+(i+1)+'月</text>');
+    });
+    svg.innerHTML = parts.join('');
+  }
+
+  // ================= 七、定期定額 =================
+  function renderDCA(){
+    var rows = state.dca.slice().sort(function(a,b){return a.day-b.day;});
+    var byCat = {tw:0,us:0,fund:0};
+    var body = rows.map(function(d){
+      var twd = toTWD(d.amount, d.ccy);
+      byCat[d.g] += twd;
+      var amt = d.ccy==='USD' ? fmtUSD(d.amount) : fmtTWD(d.amount);
+      return '<tr><td>每月'+d.day+'日</td><td>'+esc(d.name)+'</td><td><span class="swatch" style="background:'+CAT_COLOR[d.g]+'"></span>'+GROUP_LABEL[d.g]+'</td><td class="num">'+amt+'</td><td class="num">'+fmtTWD(twd)+'</td></tr>';
+    }).join('');
+    document.getElementById('dcaBody').innerHTML = body;
+    var total = byCat.tw+byCat.us+byCat.fund;
+    document.getElementById('dcaFoot').innerHTML =
+      '<tr><td colspan="2">台股／ETF小計</td><td></td><td></td><td class="num">'+fmtTWD(byCat.tw)+'</td></tr>' +
+      '<tr><td colspan="2">複委託美股小計</td><td></td><td></td><td class="num">'+fmtTWD(byCat.us)+'</td></tr>' +
+      '<tr><td colspan="2">基金小計</td><td></td><td></td><td class="num">'+fmtTWD(byCat.fund)+'</td></tr>' +
+      '<tr><td colspan="4">每月約當台幣合計</td><td class="num">'+fmtTWD(total)+'</td></tr>';
+  }
+
+  function renderFoot(){
+    document.getElementById('footNotes').innerHTML =
+      '<div><b>資料來源與估算方式：</b>股數／市價／成本／現值取自國泰證券App庫存截圖（2026/09/11）；每一筆配息金額查證自玩股網除權息一覽表、CMoney股利組成頁，已公告(confirmed)的用實際數字、尚未公告的用最新水準推估，非官方保證數字；ETF成分股取自玩股網（2026/09/10-11）；基金持股取自MoneyDJ/Yahoo股市（2026/07/31或09/11，個股層級明細）。</div>' +
+      '<div><b>需要人工留意：</b>7731火星生技、和運租車(7855)配息不穩或成本資料異常；1526日馳、7427華上生醫、6973永立榮目前皆無配息；00662尚未填入實際張數與成本；台積電(2330)有一筆來源查到的異常數字(0.88元)已排除採用；0056/00919/00918/00713/10350113的股利組成%多為近期查證值，每次除息應重新查當期公告；稅務試算的「綜合所得淨額」欄位請自行填入你當年度的實際淨額，這裡不預設任何數字。</div>' +
+      '<div>你登入的帳號底下的持股資料存在雲端（Firestore），換裝置/瀏覽器登入同一組帳號就會看到同一份；點右上角「重設為預設庫存資料」可還原成本次建立時的查證結果（會清除你之後新增/刪除/修改的全部內容，且會同步覆蓋雲端）。</div>';
+  }
+
+  function renderAll(){
+    renderDonut();
+    renderCatTable();
+    renderTiles();
+    renderHoldTable();
+    renderTreemap();
+    renderOverlap();
+    renderConcentration();
+    renderTaxCtrl();
+    renderTax();
+    renderCalendar();
+    renderDCA();
+    renderFoot();
+    renderPriceStatus();
+  }
+
+  function renderPriceStatus(){
+    var el = document.getElementById('priceAsOf');
+    if(!el) return;
+    if(!livePricesUpdatedAt){
+      el.textContent = '收盤價：尚未連上雲端同步排程（目前顯示手動輸入的市價）';
+      el.style.color = '';
+      return;
+    }
+    var stale = isPriceStale(livePricesUpdatedAt);
+    el.textContent = (stale?'⚠️ ':'✓ ') + '收盤價自動更新於 ' + livePricesUpdatedAt + (livePricesSource?'（'+livePricesSource+'）':'');
+    el.style.color = stale ? 'var(--warn)' : '';
+  }
+
+  // 每筆持股的 price/value 欄位一律以「官方收盤價 × 股數」為準覆寫（qty仍以使用者輸入為準），
+  // 找不到對應雲端資料的持股（例如基金、剛手動新增、代號沒對上）維持原本手動輸入的市價不動。
+  // 2026-09-14 修正：原本只在price有變動時才重算value，導致「今天有更新的幾檔」用全新
+  // qty×收盤價，「今天沒更新的其他檔」還留著最初從截圖手動謄寫的value（跟qty×price本來就有
+  // 零星幾百~幾千元落差），兩種算法混在同一份總表裡兜不起來。用戶確認過要一律以
+  // 「官方收盤價×股數」為準（不是券商App當下即時報價），所以只要有對應的雲端價格資料，
+  // 不管price是否剛好沒變，value都強制依qty×price重算，全表統一同一套算法。
+  function applyLivePrices(){
+    var changed = false;
+    state.holdings.forEach(function(h){
+      var lp = livePrices[priceKey(h)];
+      if(!lp || typeof lp.price !== 'number' || !isFinite(lp.price) || lp.price <= 0) return;
+      // lp.price 預設跟 h.currency 同一幣別（台股/台幣基金=台幣，美股=美元）。
+      // 唯一例外：00040059這類「h.currency記TWD、但NAV本身是用美元公告」的基金，
+      // 寫進db時會帶 lp.ccy:"USD" 標記，這裡要先換算成台幣再乘股數，否則會少乘一次匯率、
+      // 把現值誤算成只剩約1/31.6（曾經差點在這裡出過更大的錯，特別留言提醒）。
+      var p = lp.price;
+      if(lp.ccy === 'USD' && h.currency !== 'USD'){ p = lp.price * fx(); }
+      var newValue = Math.round(h.qty * p * 100) / 100;
+      if(h.price !== p || h.value !== newValue){
+        h.price = p;
+        h.value = newValue;
+        changed = true;
+      }
+    });
+    if(changed) save();
+  }
+
+  // Firestore專案：claude-ai-8e10f（跟記帳App/蘿荔×薇蔻試算App/選物連結牆同一個專案，
+  // 不同collection）。web config可以公開內嵌，安全性靠firestore.rules：
+  // stockWarRoom collection對任何人公開唯讀、寫入只允許Admin SDK（見D:\AI agent\firestore.rules）。
+  var FIREBASE_CONFIG = {
+    apiKey: "AIzaSyDEqw-2W7yQSVJTw3cASImczMGLlHzjO5E",
+    authDomain: "claude-ai-8e10f.firebaseapp.com",
+    projectId: "claude-ai-8e10f",
+  };
+
+  function initLivePrices(){
+    if(typeof firebase === 'undefined' || !firebase.firestore){
+      try{ console.warn('存股戰情室：Firebase SDK 沒載入成功，改用手動輸入的市價'); }catch(e){}
+      return;
+    }
+    try{
+      if(!firebase.apps || !firebase.apps.length){ firebase.initializeApp(FIREBASE_CONFIG); }
+      var ref = firebase.firestore().collection('stockWarRoom').doc('prices');
+      ref.onSnapshot(function(snap){
+        if(!snap.exists) return;
+        var data = snap.data() || {};
+        livePrices = (data.items && typeof data.items === 'object') ? data.items : {};
+        livePricesUpdatedAt = data.updatedAt || null;
+        livePricesSource = data.source || null;
+        applyLivePrices();
+        renderAll();
+      }, function(err){
+        try{ console.warn('存股戰情室：讀取雲端收盤價失敗，改用手動輸入的市價', err); }catch(e){}
+      });
+    }catch(e){
+      try{ console.warn('存股戰情室：Firebase 初始化失敗', e); }catch(e2){}
+    }
+  }
+
+  // ---- 持股本身（張數/成本/配息假設等）雲端同步：需登入，跟記帳App同一組帳號 ----
+  // 2026-09-16 用戶反覆回報「刪除/改股數後總覽數字沒變」，一路查到根因其實是①confirm()
+  // 在sandbox裡被靜默擋掉導致刪除從未真的執行（已修，見showConfirm）②持股資料只存在
+  // localStorage、換瀏覽器分頁測試/清快取都會不見，使用者判斷不出「有沒有真的存到」。
+  // 用戶最終要求「都改成雲端的」且「一樣要有密碼」，改用 Firestore + Firebase Auth
+  // （沿用記帳App/蘿荔×薇蔻試算App已經在用的同一個帳號 missyou52049@gmail.com），
+  // 讀寫路徑 stockWarRoomHoldings/{uid}，rules 限定本人uid才能讀寫。
+  var holdingsDocRef = null;
+  var cloudSaveTimer = null;
+
+  function setCloudStatus(text, isWarn){
+    var el = document.getElementById('cloudStatus');
+    if(!el) return;
+    el.textContent = text;
+    el.style.color = isWarn ? 'var(--warn)' : '';
+  }
+
+  // 防抖500ms：每次save()都會呼叫這裡，避免連續編輯（例如展開列連續改好幾筆配息）
+  // 每一下都各自打一次Firestore，跟記帳App的debounced寫法同一個道理。
+  function scheduleCloudSave(){
+    if(!holdingsDocRef) return;
+    clearTimeout(cloudSaveTimer);
+    cloudSaveTimer = setTimeout(function(){
+      holdingsDocRef.set(JSON.parse(JSON.stringify(state))).then(function(){
+        var t = new Date().toLocaleTimeString('zh-TW', {hour:'2-digit', minute:'2-digit'});
+        setCloudStatus('✓ 持股資料已同步到雲端（' + t + '）');
+      }).catch(function(e){
+        setCloudStatus('⚠️ 雲端同步失敗，這次修改暫時只存在本機瀏覽器：' + e.message, true);
+      });
+    }, 500);
+  }
+
+  function loadHoldingsFromCloud(){
+    setCloudStatus('雲端同步：讀取中…');
+    holdingsDocRef.get().then(function(snap){
+      if(snap.exists){
+        try{
+          // doc.data() 回傳的物件是唯讀/frozen 的，直接丟給會做欄位賦值的 sanitizeState
+          // 會 throw——先深複製成一份全新的一般物件再處理，才不會炸開。
+          var remote = sanitizeState(JSON.parse(JSON.stringify(snap.data())));
+          if(remote.holdings.length){
+            state = remote; expanded = {}; activeCat = null;
+            document.getElementById('fx').value = state.fx;
+            renderAll();
+          }
+          setCloudStatus('✓ 已從雲端載入持股資料（' + state.holdings.length + ' 檔）');
+        }catch(e){
+          setCloudStatus('⚠️ 雲端資料格式不相容，暫時使用本機資料：' + e.message, true);
+        }
+      } else {
+        // 第一次登入這個帳號、雲端還沒有任何資料——把目前畫面上的資料（本機舊資料或預設查證資料）
+        // 當種子寫上去，之後才有東西可以覆蓋/同步。
+        setCloudStatus('✓ 雲端尚無資料，已用目前畫面資料建立雲端備份');
+        scheduleCloudSave();
+      }
+    }).catch(function(e){
+      setCloudStatus('⚠️ 讀取雲端資料失敗，僅使用本機資料：' + e.message, true);
+    });
+  }
+
+  function initAuthGate(){
+    var gate = document.getElementById('authGate');
+    var wrap = document.getElementById('mainWrap');
+    if(typeof firebase === 'undefined' || !firebase.auth){
+      // SDK沒載入成功：不要把使用者永遠鎖在登入畫面外面，退回不登入、純本機模式
+      try{ console.warn('存股戰情室：Firebase Auth 沒載入成功，暫時略過登入直接用本機資料'); }catch(e){}
+      gate.style.display = 'none';
+      wrap.style.display = 'flex';
+      return;
+    }
+    try{
+      if(!firebase.apps || !firebase.apps.length){ firebase.initializeApp(FIREBASE_CONFIG); }
+      firebase.auth().onAuthStateChanged(function(user){
+        if(user){
+          gate.style.display = 'none';
+          wrap.style.display = 'flex';
+          holdingsDocRef = firebase.firestore().collection('stockWarRoomHoldings').doc(user.uid);
+          loadHoldingsFromCloud();
+        } else {
+          gate.style.display = 'flex';
+          wrap.style.display = 'none';
+          holdingsDocRef = null;
+        }
+      });
+    }catch(e){
+      try{ console.warn('存股戰情室：Firebase Auth 初始化失敗，退回本機模式', e); }catch(e2){}
+      gate.style.display = 'none';
+      wrap.style.display = 'flex';
+      return;
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      var email = document.getElementById('loginEmail').value.trim();
+      var pw = document.getElementById('loginPassword').value;
+      var errEl = document.getElementById('loginError');
+      errEl.style.color = 'var(--muted)';
+      errEl.textContent = '登入中…';
+      firebase.auth().signInWithEmailAndPassword(email, pw).catch(function(err){
+        errEl.style.color = 'var(--danger)';
+        errEl.textContent = '登入失敗：' + (err.message || err.code || '請確認帳密');
+      });
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', function(){
+      firebase.auth().signOut();
+    });
+  }
+
+  document.getElementById('tabs').addEventListener('click', function(e){
+    var btn = e.target.closest('button[data-g]');
+    if(!btn) return;
+    activeGroup = btn.dataset.g;
+    document.querySelectorAll('#tabs button').forEach(function(b){ b.classList.toggle('active', b===btn); });
+    renderHoldTable();
+  });
+
+  document.getElementById('fx').addEventListener('change', function(){ save(); renderAll(); });
+
+  document.getElementById('resetBtn').addEventListener('click', function(){
+    showConfirm('確定要清除目前修改，還原成預設查證資料嗎？', function(){
+      state = JSON.parse(JSON.stringify(DEFAULTS));
+      expanded = {}; activeCat = null;
+      document.getElementById('fx').value = state.fx;
+      save(); renderAll();
+    });
+  });
+
+  initHoldTableDelegation();
+  initAuthGate();
+  initLivePrices();
+  document.getElementById('fx').value = state.fx || 31.6;
+  document.getElementById('genAt').textContent = '本次建立/更新時間：2026-09-13（2026-09-16 收盤價改接 Firestore 即時訂閱＋持股資料改雲端同步，需登入）';
+
+  // 最後一道防線：就算 sanitizeState() 沒攔到、render 過程中還是丟例外，
+  // 也不要讓使用者看到整頁空白——清掉本機資料、換回預設資料重畫一次，並顯示一則提示。
+  try{
+    renderAll();
+  }catch(err){
+    try{ console.error('存股戰情室：render 失敗，改用預設資料重試', err); }catch(e2){}
+    try{ localStorage.removeItem(STORE_KEY); }catch(e3){}
+    state = JSON.parse(JSON.stringify(DEFAULTS));
+    expanded = {}; activeCat = null; tmActiveKey = null;
+    document.getElementById('fx').value = state.fx;
+    try{
+      renderAll();
+      showResetNotice();
+    }catch(err2){
+      document.querySelector('.wrap').innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)">頁面發生非預期錯誤，且用預設資料重試也失敗了，麻煩回報這個訊息：<br><code style="font-size:12px">'+String(err2 && err2.message || err2)+'</code></div>';
+    }
+  }
+})();
+</script>
+
+</body></html>
