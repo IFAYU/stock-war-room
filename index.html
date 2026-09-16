@@ -149,6 +149,9 @@
   .note.warn{ color:var(--warn); }
   .note.clamp{ display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; }
   .note::after{ content:'（點擊展開/收合說明）'; display:block; font-size:10px; opacity:.6; text-decoration:underline; margin-top:2px; }
+  .footBlock{ cursor:pointer; }
+  .footBlock.clamp{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .footBlock::after{ content:'（點擊展開/收合）'; display:block; font-size:10px; opacity:.6; text-decoration:underline; margin-top:2px; }
   .tag{ font-size:10.5px; font-weight:700; padding:1px 6px; border-radius:999px; }
   .tag.confirmed{ background:var(--accent-soft); color:var(--accent); }
   .tag.forecast{ background:var(--warn-soft); color:var(--warn); }
@@ -1438,9 +1441,11 @@
   }
 
   function renderFoot(){
+    var srcOpen = !!expanded['foot-source'];
+    var attOpen = !!expanded['foot-attention'];
     document.getElementById('footNotes').innerHTML =
-      '<div><b>資料來源與估算方式：</b>股數／市價／成本／現值取自國泰證券App庫存截圖（2026/09/11）；每一筆配息金額查證自玩股網除權息一覽表、CMoney股利組成頁，已公告(confirmed)的用實際數字、尚未公告的用最新水準推估，非官方保證數字；ETF成分股取自玩股網（2026/09/10-11）；基金持股取自MoneyDJ/Yahoo股市（2026/07/31或09/11，個股層級明細）。</div>' +
-      '<div><b>需要人工留意：</b>7731火星生技、和運租車(7855)配息不穩或成本資料異常；1526日馳、7427華上生醫、6973永立榮目前皆無配息；00662尚未填入實際張數與成本；台積電(2330)有一筆來源查到的異常數字(0.88元)已排除採用；0056/00919/00918/00713/10350113的股利組成%多為近期查證值，每次除息應重新查當期公告；稅務試算的「綜合所得淨額」欄位請自行填入你當年度的實際淨額，這裡不預設任何數字。</div>' +
+      '<div class="footBlock'+(srcOpen?'':' clamp')+'" data-foottoggle="foot-source"><b>資料來源與估算方式：</b>股數／市價／成本／現值取自國泰證券App庫存截圖（2026/09/11）；每一筆配息金額查證自玩股網除權息一覽表、CMoney股利組成頁，已公告(confirmed)的用實際數字、尚未公告的用最新水準推估，非官方保證數字；ETF成分股取自玩股網（2026/09/10-11）；基金持股取自MoneyDJ/Yahoo股市（2026/07/31或09/11，個股層級明細）。</div>' +
+      '<div class="footBlock'+(attOpen?'':' clamp')+'" data-foottoggle="foot-attention"><b>需要人工留意：</b>7731火星生技、和運租車(7855)配息不穩或成本資料異常；1526日馳、7427華上生醫、6973永立榮目前皆無配息；00662尚未填入實際張數與成本；台積電(2330)有一筆來源查到的異常數字(0.88元)已排除採用；0056/00919/00918/00713/10350113的股利組成%多為近期查證值，每次除息應重新查當期公告；稅務試算的「綜合所得淨額」欄位請自行填入你當年度的實際淨額，這裡不預設任何數字。</div>' +
       '<div>你登入的帳號底下的持股資料存在雲端（Firestore），換裝置/瀏覽器登入同一組帳號就會看到同一份；點右上角「重設為預設庫存資料」可還原成本次建立時的查證結果（會清除你之後新增/刪除/修改的全部內容，且會同步覆蓋雲端）。</div>';
   }
 
@@ -1660,6 +1665,14 @@
       document.getElementById('fx').value = state.fx;
       save(); renderAll();
     });
+  });
+
+  document.getElementById('footNotes').addEventListener('click', function(e){
+    var el = e.target.closest('[data-foottoggle]');
+    if(!el) return;
+    var k = el.dataset.foottoggle;
+    expanded[k] = !expanded[k];
+    renderFoot();
   });
 
   initHoldTableDelegation();
