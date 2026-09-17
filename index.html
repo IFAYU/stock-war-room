@@ -1593,6 +1593,15 @@
           if(remote.holdings.length){
             state = remote; expanded = {}; activeCat = null;
             document.getElementById('fx').value = state.fx;
+            // 2026-09-17 修根因：initLivePrices() 的 onSnapshot（不需登入，公開集合）常常比這裡的
+            // 雲端持股讀取（需先等 Firebase Auth 判斷登入狀態）更早觸發一次，那一次 applyLivePrices()
+            // 是套在「登入前的舊/預設 state」上，套完之後 state 就被這裡整包換成 remote，剛剛套用的
+            // 結果直接被蓋掉；而 prices 文件平常一天只會變一次，同一個瀏覽器分頁不會再收到第二次
+            // onSnapshot 事件去補套，導致「現值/市價」永遠停在雲端快取裡最後一次剛好時序對的舊值，
+            // 一天比一天更舊卻沒人發現。這裡改成每次剛從雲端載入 state 後，主動用目前已收到的
+            // livePrices 重新套一次（livePrices 預設是空物件，還沒收到任何價格資料時呼叫也安全，
+            // 不會出錯，之後 onSnapshot 真的觸發時一樣會再套一次），確保跟哪一個先跑無關都會套到對的值。
+            applyLivePrices();
             renderAll();
           }
           setCloudStatus('✓ 已從雲端載入持股資料（' + state.holdings.length + ' 檔）');
