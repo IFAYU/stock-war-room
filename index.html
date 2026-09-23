@@ -1555,7 +1555,7 @@
   // 在sandbox裡被靜默擋掉導致刪除從未真的執行（已修，見showConfirm）②持股資料只存在
   // localStorage、換瀏覽器分頁測試/清快取都會不見，使用者判斷不出「有沒有真的存到」。
   // 用戶最終要求「都改成雲端的」且「一樣要有密碼」，改用 Firestore + Firebase Auth
-  // （沿用記帳App/蘿荔×薇蔻試算App已經在用的同一個帳號 missyou52049@gmail.com），
+  // （沿用記帳App/蘿荔×薇蔻試算App已經在用的同一個帳號），
   // 讀寫路徑 stockWarRoomHoldings/{uid}，rules 限定本人uid才能讀寫。
   var holdingsDocRef = null;
   var cloudSaveTimer = null;
